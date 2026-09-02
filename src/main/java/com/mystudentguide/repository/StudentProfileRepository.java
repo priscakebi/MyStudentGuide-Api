@@ -46,4 +46,27 @@ public interface StudentProfileRepository
      * @return true si un profil existe, false sinon
      */
     boolean existsByUserId(Long userId);
+
+
+    /**
+     * Recherche un profil étudiant à partir
+     * de l'adresse email de l'utilisateur.
+     *
+     * Spring Data comprend automatiquement le chemin :
+     *
+     * StudentProfile
+     *      ↓
+     * user
+     *      ↓
+     * email
+     *
+     * Cette méthode sera utilisée par
+     * GET /api/student-profiles/me
+     *
+     * @param email email de l'utilisateur connecté
+     * @return profil étudiant s'il existe
+     */
+    Optional<StudentProfile> findByUserEmail(String email);
+
+    
 }

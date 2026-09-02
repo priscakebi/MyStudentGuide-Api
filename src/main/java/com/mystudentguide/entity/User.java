@@ -6,6 +6,15 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+
+import java.util.Collection;
+
+import java.util.List;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 
 /**
  * Représente un utilisateur de l'application.
@@ -22,7 +31,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
 
     /**
      * Clé primaire de la table.
@@ -38,13 +47,13 @@ public class User {
      * Prénom de l'utilisateur.
      */
     @Column(nullable = false, length = 100)
-    private String firstName;
+    private String prenom;
 
     /**
      * Nom de famille.
      */
     @Column(nullable =false, length =100)
-    private String lastName;
+    private String nom;
 
     /**
      * Adresse email.
@@ -147,5 +156,43 @@ public class User {
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @Override
+public Collection<? extends GrantedAuthority> getAuthorities() {
+
+    return List.of(
+        new SimpleGrantedAuthority("ROLE_" + role.name())
+);
+}
+
+@Override
+public String getPassword() {
+    return password;
+}
+
+@Override
+public String getUsername() {
+    return email;
+}
+
+@Override
+public boolean isAccountNonExpired() {
+    return true;
+}
+
+@Override
+public boolean isAccountNonLocked() {
+    return true;
+}
+
+@Override
+public boolean isCredentialsNonExpired() {
+    return true;
+}
+
+@Override
+public boolean isEnabled() {
+    return Boolean.TRUE.equals(enabled);
+}
 
 }

@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Représente un document associé à une démarche administrative.
  *
@@ -118,13 +120,14 @@ public class Document {
      * Demarche :
      * "Demande de CAF"
      *
-     *       |
-     *       ├── Document : justificatif de domicile
-     *       ├── Document : certificat de scolarité
-     *       └── Document : pièce d'identité
+     * |
+     * ├── Document : justificatif de domicile
+     * ├── Document : certificat de scolarité
+     * └── Document : pièce d'identité
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "demarche_id", nullable = false)
+    @JsonIgnore
     private Demarche demarche;
 
     /**

@@ -1,186 +1,171 @@
 package com.mystudentguide.service;
 
+import com.mystudentguide.dto.demarche.DemarcheRequest;
+import com.mystudentguide.entity.Categorie;
 import com.mystudentguide.entity.Demarche;
+import com.mystudentguide.entity.StudentProfile;
 import com.mystudentguide.enums.DemarcheStatus;
+import com.mystudentguide.repository.CategorieRepository;
 import com.mystudentguide.repository.DemarcheRepository;
+import com.mystudentguide.repository.StudentProfileRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service responsable de la gestion des démarches administratives.
- *
- * Le service contient la logique métier liée aux démarches.
- *
- * Architecture :
- *
- * Controller
- *      ↓
- * DemarcheService
- *      ↓
- * DemarcheRepository
- *      ↓
- * MySQL
- */
 @Service
 public class DemarcheService {
 
-    /**
-     * Repository permettant d'accéder aux démarches
-     * enregistrées dans la base de données.
-     */
     private final DemarcheRepository demarcheRepository;
+    private final CategorieRepository categorieRepository;
+    private final StudentProfileRepository studentProfileRepository;
 
-    /**
-     * Injection du repository par constructeur.
-     *
-     * @param demarcheRepository repository des démarches
-     */
-    public DemarcheService(DemarcheRepository demarcheRepository) {
+    public DemarcheService(
+            DemarcheRepository demarcheRepository,
+            CategorieRepository categorieRepository,
+            StudentProfileRepository studentProfileRepository) {
+
         this.demarcheRepository = demarcheRepository;
+        this.categorieRepository = categorieRepository;
+        this.studentProfileRepository = studentProfileRepository;
     }
 
-    /**
-     * Récupère toutes les démarches présentes en base de données.
-     *
-     * Cette méthode pourra notamment être utilisée
-     * par l'administration.
-     *
-     * @return liste de toutes les démarches
-     */
     public List<Demarche> getAllDemarches() {
         return demarcheRepository.findAll();
     }
 
-    /**
-     * Recherche une démarche à partir de son identifiant.
-     *
-     * @param id identifiant de la démarche
-     * @return démarche trouvée ou Optional.empty()
-     */
     public Optional<Demarche> getDemarcheById(Long id) {
         return demarcheRepository.findById(id);
     }
 
-    /**
-     * Récupère toutes les démarches d'un étudiant.
-     *
-     * Cette méthode sera notamment utilisée pour afficher
-     * le tableau de bord de l'étudiant.
-     *
-     * @param studentProfileId identifiant du profil étudiant
-     * @return liste des démarches de l'étudiant
-     */
     public List<Demarche> getDemarchesByStudentProfile(
-            Long studentProfileId
-    ) {
+            Long studentProfileId) {
+
         return demarcheRepository
                 .findByStudentProfileId(studentProfileId);
     }
 
-    /**
-     * Récupère les démarches d'un étudiant
-     * selon leur statut.
-     *
-     * Exemple :
-     *
-     * - A_FAIRE
-     * - EN_COURS
-     * - TERMINEE
-     * - NON_CONCERNEE
-     *
-     * @param studentProfileId identifiant du profil étudiant
-     * @param statut statut recherché
-     * @return liste des démarches correspondant au statut
-     */
     public List<Demarche> getDemarchesByStatus(
             Long studentProfileId,
-            DemarcheStatus statut
-    ) {
+            DemarcheStatus statut) {
+
         return demarcheRepository
                 .findByStudentProfileIdAndStatut(
                         studentProfileId,
-                        statut
-                );
+                        statut);
     }
 
-    /**
-     * Récupère toutes les démarches appartenant
-     * à une catégorie.
-     *
-     * @param categorieId identifiant de la catégorie
-     * @return liste des démarches de la catégorie
-     */
     public List<Demarche> getDemarchesByCategorie(
-            Long categorieId
-    ) {
-        return demarcheRepository.findByCategorieId(categorieId);
+            Long categorieId) {
+
+        return demarcheRepository
+                .findByCategorieId(categorieId);
     }
 
-    /**
-     * Compte le nombre de démarches d'un étudiant
-     * ayant un statut donné.
-     *
-     * Cette méthode sera utile pour le tableau de bord.
-     *
-     * Exemple :
-     *
-     * "5 démarches terminées"
-     *
-     * @param studentProfileId identifiant du profil étudiant
-     * @param statut statut recherché
-     * @return nombre de démarches
-     */
     public long countDemarchesByStatus(
             Long studentProfileId,
-            DemarcheStatus statut
-    ) {
+            DemarcheStatus statut) {
+
         return demarcheRepository
                 .countByStudentProfileIdAndStatut(
                         studentProfileId,
-                        statut
-                );
+                        statut);
     }
 
     /**
-     * Enregistre une nouvelle démarche ou met à jour
-     * une démarche existante.
-     *
-     * @param demarche démarche à sauvegarder
-     * @return démarche enregistrée
+     * Création d'une nouvelle démarche.
      */
-    public Demarche saveDemarche(Demarche demarche) {
+    public Demarche createDemarche(DemarcheRequest request) {
+
+        // Recherche de la catégorie
+        Categorie categorie = categorieRepository
+                .findById(request.getCategorieId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Catégorie introuvable avec l'identifiant : "
+                                + request.getCategorieId()));
+
+        // Recherche du profil étudiant
+        StudentProfile studentProfile = studentProfileRepository
+                .findById(request.getStudentProfileId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Profil étudiant introuvable avec l'identifiant : "
+                                + request.getStudentProfileId()));
+
+        // Création de l'entité
+        Demarche demarche = new Demarche();
+
+        demarche.setTitre(request.getTitre());
+        demarche.setDescription(request.getDescription());
+
+        // Statut par défaut
+        if (request.getStatut() != null) {
+            demarche.setStatut(request.getStatut());
+        } else {
+            demarche.setStatut(DemarcheStatus.A_FAIRE);
+        }
+
+        demarche.setDateLimite(request.getDateLimite());
+
+        /*
+         * IMPORTANT :
+         * On associe les objets récupérés à la démarche.
+         */
+        demarche.setCategorie(categorie);
+        demarche.setStudentProfile(studentProfile);
+
         return demarcheRepository.save(demarche);
     }
 
     /**
-     * Met à jour le statut d'une démarche.
-     *
-     * Cette méthode sera notamment utilisée lorsque
-     * l'étudiant fait avancer une démarche.
-     *
-     * Exemple :
-     *
-     * A_FAIRE → EN_COURS → TERMINEE
-     *
-     * @param id identifiant de la démarche
-     * @param nouveauStatut nouveau statut
-     * @return démarche mise à jour
-     *
-     * @throws RuntimeException si la démarche n'existe pas
+     * Modification d'une démarche existante.
+     */
+    public Demarche updateDemarche(
+            Long id,
+            DemarcheRequest request) {
+
+        Demarche demarche = demarcheRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException(
+                        "Démarche introuvable avec l'identifiant : "
+                                + id));
+
+        Categorie categorie = categorieRepository
+                .findById(request.getCategorieId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Catégorie introuvable avec l'identifiant : "
+                                + request.getCategorieId()));
+
+        StudentProfile studentProfile = studentProfileRepository
+                .findById(request.getStudentProfileId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Profil étudiant introuvable avec l'identifiant : "
+                                + request.getStudentProfileId()));
+
+        demarche.setTitre(request.getTitre());
+        demarche.setDescription(request.getDescription());
+        demarche.setCategorie(categorie);
+        demarche.setStudentProfile(studentProfile);
+        demarche.setDateLimite(request.getDateLimite());
+
+        if (request.getStatut() != null) {
+            demarche.setStatut(request.getStatut());
+        }
+
+        return demarcheRepository.save(demarche);
+    }
+
+    /**
+     * Modification du statut uniquement.
      */
     public Demarche updateStatus(
             Long id,
-            DemarcheStatus nouveauStatut
-    ) {
+            DemarcheStatus nouveauStatut) {
+
         Demarche demarche = demarcheRepository
                 .findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Démarche introuvable avec l'identifiant : " + id
-                        )
-                );
+                .orElseThrow(() -> new RuntimeException(
+                        "Démarche introuvable avec l'identifiant : "
+                                + id));
 
         demarche.setStatut(nouveauStatut);
 
@@ -188,12 +173,7 @@ public class DemarcheService {
     }
 
     /**
-     * Supprime une démarche à partir de son identifiant.
-     *
-     * Cette opération sera principalement destinée
-     * à l'administration.
-     *
-     * @param id identifiant de la démarche
+     * Suppression d'une démarche.
      */
     public void deleteDemarche(Long id) {
         demarcheRepository.deleteById(id);

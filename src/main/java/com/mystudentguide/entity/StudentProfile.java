@@ -1,5 +1,8 @@
 package com.mystudentguide.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+
 import com.mystudentguide.enums.LogementType;
 import com.mystudentguide.enums.VisaType;
 import jakarta.persistence.*;
@@ -157,25 +160,36 @@ public class StudentProfile {
     @Builder.Default
     private Boolean profileCompleted = false;
 
+    
     /**
      * Relation OneToOne avec User.
      *
      * Un utilisateur possède un seul profil étudiant.
      *
-     * Cette relation est le côté propriétaire de l'association.
-     *
-     * @JoinColumn crée la clé étrangère user_id
-     *             dans la table student_profiles.
-     *
-     *             unique = true garantit qu'un utilisateur
-     *             ne peut avoir qu'un seul profil.
+     * La clé étrangère user_id est stockée dans
+     * la table student_profiles.
      */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonIgnore
     private User user;
 
-    @OneToMany(mappedBy = "studentProfile")
-    @Builder.Default
-    private List<Demarche> demarches = new ArrayList<>();
+    /**
+ * Liste des démarches administratives associées
+ * au profil étudiant.
+ *
+ * Cette relation est ignorée lors de la conversion
+ * du profil en JSON.
+ *
+ * Les démarches pourront être récupérées séparément
+ * avec leur propre endpoint.
+ */
+@OneToMany(mappedBy = "studentProfile")
+@Builder.Default
+@JsonIgnore
+private List<Demarche> demarches = new ArrayList<>();
+
+
+    
 
 }
