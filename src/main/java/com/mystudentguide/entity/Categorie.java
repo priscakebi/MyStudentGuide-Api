@@ -6,6 +6,9 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Représente une catégorie de démarches administratives.
  *
@@ -106,5 +109,6 @@ public class Categorie {
      */
     @OneToMany(mappedBy = "categorie")
     @Builder.Default
+    @JsonIgnore
     private List<Demarche> demarches = new ArrayList<>();
 }
