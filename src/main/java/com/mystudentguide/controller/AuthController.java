@@ -2,9 +2,13 @@ package com.mystudentguide.controller;
 
 
 import com.mystudentguide.dto.auth.AuthResponse;
+import com.mystudentguide.dto.auth.ForgotPasswordRequest;
+import com.mystudentguide.dto.auth.MessageResponse;
+import com.mystudentguide.dto.auth.ResetPasswordRequest;
 import com.mystudentguide.dto.auth.LoginRequest;
 import com.mystudentguide.dto.auth.RegisterRequest;
 import com.mystudentguide.service.AuthService;
+import com.mystudentguide.service.PasswordResetService;
 
 import jakarta.validation.Valid;
 
@@ -37,14 +41,19 @@ public class AuthController {
      * liée à l'authentification.
      */
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     /**
      * Injection du AuthService.
      *
      * @param authService service d'authentification
      */
-    public AuthController(AuthService authService) {
+    public AuthController(
+            AuthService authService,
+            PasswordResetService passwordResetService
+    ) {
         this.authService = authService;
+        this.passwordResetService = passwordResetService;
     }
 
     /**
@@ -104,5 +113,41 @@ public class AuthController {
         AuthResponse response = authService.login(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Mot de passe oublié : envoie un lien de réinitialisation par e-mail.
+     *
+     * POST /api/auth/forgot-password   { "email": "...", "espace": "ETUDIANT" | "ADMIN" }
+     *
+     * La réponse est TOUJOURS la même (200), que l'adresse existe ou non,
+     * pour ne pas révéler quelles adresses sont inscrites.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<MessageResponse> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+        passwordResetService.requestReset(request.getEmail(), request.getEspace());
+
+        return ResponseEntity.ok(new MessageResponse(
+                "Si un compte correspond à cette adresse, un e-mail contenant "
+                + "un lien de réinitialisation vient d'être envoyé."));
+    }
+
+    /**
+     * Définit un nouveau mot de passe à partir du jeton reçu par e-mail.
+     *
+     * POST /api/auth/reset-password   { "token": "...", "newPassword": "..." }
+     *
+     * 400 si le lien est invalide ou expiré.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<MessageResponse> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+
+        return ResponseEntity.ok(new MessageResponse(
+                "Votre mot de passe a été modifié. Vous pouvez maintenant vous connecter."));
     }
 }

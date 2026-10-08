@@ -279,6 +279,38 @@ public class EmailService {
      * @param email email de l'étudiant
      * @param prenom prénom de l'étudiant
      */
+    /**
+     * E-mail contenant le lien de réinitialisation du mot de passe.
+     * Le lien est à usage unique et valable {minutes} minutes.
+     */
+    @Async
+    public void envoyerLienReinitialisationMotDePasse(
+            String email,
+            String prenom,
+            String lien,
+            long minutes,
+            boolean admin
+    ) {
+        String sujet = admin
+                ? "Réinitialisation de votre mot de passe administrateur MyStudentGuide"
+                : "Réinitialisation de votre mot de passe MyStudentGuide";
+
+        String contenu =
+                "Bonjour " + prenom + ",\n\n"
+                + "Vous avez demandé à réinitialiser le mot de passe de votre compte "
+                + (admin ? "administrateur " : "")
+                + "MyStudentGuide.\n\n"
+                + "Cliquez sur le lien ci-dessous pour choisir un nouveau mot de passe. "
+                + "Ce lien est valable " + minutes + " minutes et ne peut être utilisé "
+                + "qu'une seule fois :\n\n"
+                + lien + "\n\n"
+                + "Si vous n'êtes pas à l'origine de cette demande, ignorez simplement "
+                + "cet e-mail : votre mot de passe actuel reste inchangé.\n\n"
+                + "L'équipe MyStudentGuide";
+
+        envoyerEmail(email, sujet, contenu);
+    }
+
     @Async
     public void envoyerConfirmationModificationMotDePasse(
             String email,

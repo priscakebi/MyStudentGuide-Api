@@ -160,6 +160,10 @@ public class SecurityConfig {
                                                 // Connexion
                                                 .requestMatchers("/api/auth/login")
                                                 .permitAll()
+                                                .requestMatchers(
+                                                                "/api/auth/forgot-password",
+                                                                "/api/auth/reset-password")
+                                                .permitAll()
 
                                                 /*
                                                  * ============================================

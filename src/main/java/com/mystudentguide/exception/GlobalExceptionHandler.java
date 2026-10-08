@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -50,6 +52,13 @@ public class GlobalExceptionHandler {
         body.put("errors", errors);
 
         return ResponseEntity.badRequest().body(body);
+    }
+
+    /** Corps JSON absent ou mal formé, ou paramètre de mauvais type : 400 (et non 500). */
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Map<String, Object>> handleBadRequest(Exception ex) {
+        return ResponseEntity.badRequest()
+                .body(body(HttpStatus.BAD_REQUEST, "La requête est mal formée."));
     }
 
     /** Règle métier non respectée (ex : email déjà utilisé). */

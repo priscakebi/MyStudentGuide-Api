@@ -145,32 +145,6 @@ public boolean existsNotification(
         return notificationRepository.findById(id);
     }
 
-
-        /**
-     * Récupère toutes les notifications de la plateforme.
-     *
-     * Cette méthode est destinée à l'administration.
-     * Contrairement à getNotificationsByUser(), elle ne filtre
-     * pas les notifications selon un utilisateur.
-     *
-     * JpaRepository fournit automatiquement la méthode findAll().
-     *
-     * Les notifications sont ensuite triées de la plus récente
-     * à la plus ancienne.
-     *
-     * @return liste de toutes les notifications
-     */
-    public List<Notification> getAllNotifications() {
-
-        return notificationRepository.findAll()
-                .stream()
-                .sorted(
-                        (n1, n2) -> n2.getDateCreation()
-                                .compareTo(n1.getDateCreation())
-                )
-                .toList();
-    }
-
     /**
      * Enregistre une notification.
      *

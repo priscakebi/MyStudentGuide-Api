@@ -87,6 +87,14 @@ Les principales entités sont :
 - Notification
 - Document
 
+## Configuration (variables d'environnement)
+
+Voir `.env.example` à la racine du projet API. Principales variables :
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` (32 caractères minimum),
+`CORS_ALLOWED_ORIGINS`, `MAIL_USERNAME`, `MAIL_PASSWORD`.
+
+Lancer avec les logs SQL : `mvn spring-boot:run -Dspring-boot.run.profiles=dev`
+
 ## Auteur
 
 **Kouenin Kebi Prisca **
