@@ -1,47 +1,47 @@
 # ============================================================
 # MyStudentGuide API
-# Dockerfile - Spring Boot + Java 21
+# Construction multi-stage avec Maven et Java 21
 # ============================================================
 
 # ------------------------------------------------------------
-# Étape 1 : Image Java
+# ÉTAPE 1 : Compiler l'application Spring Boot
 # ------------------------------------------------------------
-# Eclipse Temurin fournit une distribution OpenJDK fiable.
-# Le projet MyStudentGuide utilise Java 21.
-FROM eclipse-temurin:21-jre
+# Cette image contient le JDK nécessaire pour compiler
+# le code Java et générer le fichier JAR avec Maven.
+FROM eclipse-temurin:21-jdk AS build
 
-# ------------------------------------------------------------
-# Étape 2 : Répertoire de travail
-# ------------------------------------------------------------
-# Tous les fichiers nécessaires à l'application seront
-# placés dans ce répertoire à l'intérieur du conteneur.
+# Définit le dossier de travail de la phase de compilation.
 WORKDIR /app
 
-# ------------------------------------------------------------
-# Étape 3 : Copier le fichier JAR
-# ------------------------------------------------------------
-# Maven génère le fichier JAR dans le dossier target.
-# Avant de construire l'image Docker, il faut donc avoir
-# exécuté :
-#
-#     .\mvnw.cmd clean package
-#
-# Le caractère * permet de récupérer automatiquement
-# le JAR généré.
-COPY target/*.jar app.jar
+# Copie les fichiers Maven et le code source du projet.
+# Le dossier .mvn contient la configuration du Maven Wrapper.
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+COPY src/ src/
+
+# Rend le script Maven Wrapper exécutable dans Linux.
+RUN chmod +x mvnw
+
+# Compile le projet et génère le JAR sans exécuter les tests.
+# Les tests pourront être lancés séparément avant le déploiement.
+RUN ./mvnw -B clean package -DskipTests
 
 # ------------------------------------------------------------
-# Étape 4 : Port de l'application
+# ÉTAPE 2 : Préparer l'image d'exécution
 # ------------------------------------------------------------
-# Le port utilisé par l'application sera configuré par
-# Spring Boot à partir de la variable d'environnement PORT.
-#
-# Render fournit automatiquement cette variable lors
-# de l'exécution du service.
+# Une image JRE plus légère suffit pour exécuter le JAR.
+FROM eclipse-temurin:21-jre
+
+# Définit le dossier de travail de l'application.
+WORKDIR /app
+
+# Récupère le JAR généré pendant la première étape.
+# target/ existe dans l'étape build, même s'il est ignoré par Git.
+COPY --from=build /app/target/*.jar app.jar
+
+# Documente le port utilisé par l'application Spring Boot.
+# Render transmettra le port via la variable d'environnement PORT.
 EXPOSE 8080
 
-# ------------------------------------------------------------
-# Étape 5 : Démarrage de l'application
-# ------------------------------------------------------------
 # Lance l'application Spring Boot.
 ENTRYPOINT ["java", "-jar", "app.jar"]
