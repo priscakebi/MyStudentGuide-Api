@@ -5,6 +5,7 @@ import com.mystudentguide.entity.Notification;
 import com.mystudentguide.entity.User;
 import com.mystudentguide.enums.NotificationType;
 import com.mystudentguide.enums.RoleType;
+import com.mystudentguide.repository.AvisRepository;
 import com.mystudentguide.repository.NotificationRepository;
 import com.mystudentguide.repository.UserRepository;
 
@@ -61,6 +62,7 @@ public class AccountService {
      * Service centralisant l'envoi des emails.
      */
     private final EmailService emailService;
+    private final AvisRepository avisRepository;
 
     /**
      * Constructeur du service.
@@ -74,12 +76,14 @@ public class AccountService {
             UserRepository userRepository,
             NotificationRepository notificationRepository,
             PasswordEncoder passwordEncoder,
-            EmailService emailService
+            EmailService emailService,
+            AvisRepository avisRepository
     ) {
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.avisRepository = avisRepository;
     }
 
     /**
@@ -310,6 +314,9 @@ public class AccountService {
          * La méthode deleteByUserId() devra être ajoutée
          * dans NotificationRepository.
          */
+        // Les avis publics de l'étudiant sont supprimés avec son compte.
+        avisRepository.deleteByUserId(user.getId());
+
         notificationRepository.deleteByUserId(user.getId());
 
         // ==========================================================
@@ -346,5 +353,86 @@ public class AccountService {
                 userEmail,
                 userPrenom
         );
+    }
+
+    // ============================================================
+    // CHANGER LE MOT DE PASSE (utilisateur connecté)
+    // ============================================================
+
+    /**
+     * Change le mot de passe de l'utilisateur connecté.
+     *
+     * Règles (identiques au formulaire du front) :
+     * - le mot de passe actuel doit être correct ;
+     * - 8 caractères minimum, une minuscule, une majuscule,
+     *   un chiffre et un caractère spécial (@$!%*?&) ;
+     * - différent de l'ancien.
+     *
+     * Un e-mail de confirmation est envoyé.
+     */
+    @Transactional
+    public void changePassword(String currentPassword, String newPassword) {
+
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Le mot de passe actuel est obligatoire."
+            );
+        }
+
+        if (!isStrongPassword(newPassword)) {
+            throw new IllegalArgumentException(
+                    "Le nouveau mot de passe doit contenir au minimum 8 caractères, "
+                    + "une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)."
+            );
+        }
+
+        User user = getCurrentUser();
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadCredentialsException(
+                    "Le mot de passe actuel est incorrect."
+            );
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException(
+                    "Le nouveau mot de passe doit être différent de l'ancien."
+            );
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        emailService.envoyerConfirmationModificationMotDePasse(
+                user.getEmail(),
+                user.getPrenom()
+        );
+    }
+
+    private static boolean isStrongPassword(String password) {
+        return password != null
+                && password.length() >= 8
+                && password.length() <= 72
+                && password.matches(".*[a-z].*")
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*\\d.*")
+                && password.matches(".*[@$!%*?&].*");
+    }
+
+    private User getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication.getName() == null) {
+            throw new IllegalStateException("Aucun utilisateur connecté.");
+        }
+
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new IllegalStateException("Utilisateur connecté introuvable.")
+                );
     }
 }

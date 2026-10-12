@@ -169,6 +169,30 @@ public boolean existsNotification(
      *
      * @throws RuntimeException si la notification n'existe pas
      */
+    /**
+     * Vrai si une question « à action » attend encore
+     * la réponse de l'étudiant pour ce suivi.
+     */
+    public boolean hasPendingAction(Long studentDemarcheId, String action) {
+        return !notificationRepository
+                .findPendingActions(studentDemarcheId, action)
+                .isEmpty();
+    }
+
+    /**
+     * Marque comme traitées (et lues) toutes les questions
+     * « à action » encore ouvertes pour ce suivi.
+     */
+    public void closePendingActions(Long studentDemarcheId, String action) {
+        List<Notification> pending =
+                notificationRepository.findPendingActions(studentDemarcheId, action);
+        for (Notification notification : pending) {
+            notification.setActionTraitee(true);
+            notification.setLu(true);
+        }
+        notificationRepository.saveAll(pending);
+    }
+
     public Notification markAsRead(Long id) {
 
         Notification notification = notificationRepository

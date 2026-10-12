@@ -480,6 +480,41 @@ public class StudentDemarcheController {
      * @param authentication utilisateur connecté
      * @return StudentDemarche mise à jour
      */
+    /**
+     * Réponse de l'étudiant au rappel de J+10.
+     *
+     * PATCH /api/student-demarches/{id}/documents?envoyes=true|false
+     */
+    @PatchMapping("/{id}/documents")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ETUDIANT')")
+    public ResponseEntity<StudentDemarche> confirmerEnvoiDocuments(
+            @PathVariable Long id,
+            @RequestParam boolean envoyes,
+            Authentication authentication) {
+
+        StudentDemarche studentDemarche;
+
+        try {
+            studentDemarche =
+                    studentDemarcheService.getStudentDemarcheById(id);
+        } catch (RuntimeException exception) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (isStudent(authentication)
+                && !belongsToCurrentStudent(
+                        studentDemarche,
+                        authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // IllegalArgumentException → 400 via GlobalExceptionHandler.
+        return ResponseEntity.ok(
+                studentDemarcheService.confirmerEnvoiDocuments(id, envoyes)
+        );
+    }
+
+
     @PatchMapping("/{id}/commentaire")
     @PreAuthorize("hasAnyRole('ADMIN', 'ETUDIANT')")
     public ResponseEntity<StudentDemarche> updateCommentaire(

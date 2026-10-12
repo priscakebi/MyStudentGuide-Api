@@ -25,6 +25,9 @@ import java.time.LocalDateTime;
 @Builder
 public class Notification {
 
+    /** Action : demander à l'étudiant s'il a envoyé ses documents (rappel J+10). */
+    public static final String ACTION_CONFIRMER_DOCUMENTS = "CONFIRMER_DOCUMENTS";
+
     /**
      * Identifiant unique de la notification.
      *
@@ -102,6 +105,29 @@ public class Notification {
      * Initialise automatiquement la date de création
      * avant l'insertion en base.
      */
+    /**
+     * Démarche suivie concernée par la notification (facultatif).
+     *
+     * Utilisé par le rappel de J+10 : la notification affiche
+     * alors les boutons « Oui » / « Pas encore ».
+     */
+    @Column(name = "student_demarche_id")
+    private Long studentDemarcheId;
+
+    /**
+     * Action attendue de l'étudiant (facultatif).
+     *
+     * Valeur utilisée : CONFIRMER_DOCUMENTS.
+     */
+    @Column(name = "action_type", length = 40)
+    private String action;
+
+    /**
+     * Vrai lorsque l'étudiant a déjà répondu à l'action.
+     */
+    @Column(name = "action_traitee")
+    private Boolean actionTraitee;
+
     @PrePersist
     protected void onCreate() {
 

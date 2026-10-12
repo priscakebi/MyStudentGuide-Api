@@ -3,6 +3,7 @@ package com.mystudentguide.config;
 import com.mystudentguide.security.CustomUserDetailsService;
 import com.mystudentguide.security.JwtAuthenticationFilter;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -146,6 +147,13 @@ public class SecurityConfig {
                                  * Définition des routes accessibles ou protégées.
                                  */
                                 .authorizeHttpRequests(auth -> auth
+                                                // Page d'erreur de Spring : sans cette règle, toute
+                                                // erreur (404, 500...) était renvoyée en 401, ce qui
+                                                // déconnectait l'utilisateur côté front.
+                                                .dispatcherTypeMatchers(DispatcherType.ERROR)
+                                                .permitAll()
+                                                .requestMatchers("/error")
+                                                .permitAll()
 
                                                 /*
                                                  * ============================================
@@ -171,6 +179,11 @@ public class SecurityConfig {
                                                  * ============================================
                                                  */
 
+                                                // Avis affichés sur la page d'accueil : visibles par tous.
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/avis/public")
+                                                .permitAll()
                                                 .requestMatchers(
                                                                 "/swagger-ui/**",
                                                                 "/swagger-ui.html",

@@ -1,6 +1,7 @@
 package com.mystudentguide.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.mystudentguide.enums.DemarcheStatus;
 import jakarta.persistence.*;
 
@@ -33,6 +34,7 @@ import java.time.LocalDate;
         )
     }
 )
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class StudentDemarche {
 
     /**
@@ -104,6 +106,39 @@ public class StudentDemarche {
     /**
      * Constructeur vide obligatoire pour JPA.
      */
+    /**
+     * Date à laquelle l'étudiant a cliqué sur « Commencer »
+     * (passage au statut EN_COURS).
+     *
+     * Sert de point de départ au rappel automatique de J+10
+     * demandant si les documents ont été envoyés.
+     */
+    @Column(name = "date_debut")
+    private LocalDate dateDebut;
+
+    /**
+     * Réponse de l'étudiant à la question
+     * « Avez-vous envoyé vos documents sur la plateforme dédiée ? ».
+     *
+     * null / false : pas encore confirmé ; true : documents envoyés.
+     * (Colonne nullable : compatible avec les lignes déjà en base.)
+     */
+    @Column(name = "documents_envoyes")
+    private Boolean documentsEnvoyes;
+
+    /**
+     * Date à laquelle l'étudiant a confirmé l'envoi des documents.
+     */
+    @Column(name = "date_envoi_documents")
+    private LocalDate dateEnvoiDocuments;
+
+    /**
+     * Vrai lorsque l'étudiant a déjà donné son avis
+     * sur le suivi de cette démarche (un seul avis par démarche).
+     */
+    @Column(name = "avis_donne")
+    private Boolean avisDonne;
+
     public StudentDemarche() {
     }
 
@@ -199,5 +234,60 @@ public class StudentDemarche {
 
     public void setCommentaire(String commentaire) {
         this.commentaire = commentaire;
+    }
+
+    public LocalDate getDateDebut() {
+        return dateDebut;
+    }
+
+    public void setDateDebut(LocalDate dateDebut) {
+        this.dateDebut = dateDebut;
+    }
+
+    public boolean isDocumentsEnvoyes() {
+        return Boolean.TRUE.equals(documentsEnvoyes);
+    }
+
+    public void setDocumentsEnvoyes(Boolean documentsEnvoyes) {
+        this.documentsEnvoyes = documentsEnvoyes;
+    }
+
+    public LocalDate getDateEnvoiDocuments() {
+        return dateEnvoiDocuments;
+    }
+
+    public void setDateEnvoiDocuments(LocalDate dateEnvoiDocuments) {
+        this.dateEnvoiDocuments = dateEnvoiDocuments;
+    }
+
+    public boolean isAvisDonne() {
+        return Boolean.TRUE.equals(avisDonne);
+    }
+
+    public void setAvisDonne(Boolean avisDonne) {
+        this.avisDonne = avisDonne;
+    }
+
+    /**
+     * Progression de la démarche, en pourcentage (renvoyée dans le JSON).
+     *
+     * - A_FAIRE                         →   0 %
+     * - EN_COURS (clic sur Commencer)   →  25 %
+     * - EN_COURS + documents envoyés    →  50 %
+     * - TERMINEE                        → 100 %
+     * - NON_CONCERNEE                   →   0 % (exclue du calcul global côté front)
+     */
+    public int getProgression() {
+        if (statut == null) {
+            return 0;
+        }
+        switch (statut) {
+            case EN_COURS:
+                return isDocumentsEnvoyes() ? 50 : 25;
+            case TERMINEE:
+                return 100;
+            default:
+                return 0;
+        }
     }
 }

@@ -3,6 +3,8 @@ package com.mystudentguide.repository;
 import com.mystudentguide.entity.Notification;
 import com.mystudentguide.enums.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -100,4 +102,20 @@ public interface NotificationRepository
      * @param userId identifiant de l'utilisateur
      */
     void deleteByUserId(Long userId);
+
+    /**
+     * Notifications « à action » encore sans réponse
+     * pour un suivi de démarche donné.
+     */
+    @Query("""
+        SELECT n
+        FROM Notification n
+        WHERE n.studentDemarcheId = :studentDemarcheId
+        AND n.action = :action
+        AND (n.actionTraitee IS NULL OR n.actionTraitee = false)
+    """)
+    List<Notification> findPendingActions(
+            @Param("studentDemarcheId") Long studentDemarcheId,
+            @Param("action") String action
+    );
 }
