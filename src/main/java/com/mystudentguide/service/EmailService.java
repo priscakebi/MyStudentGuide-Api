@@ -2,10 +2,16 @@ package com.mystudentguide.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Service responsable de l'envoi des emails de MyStudentGuide.
@@ -16,6 +22,12 @@ import org.springframework.stereotype.Service;
  * Il ne contient pas la logique métier :
  * les autres services décident QUAND un email doit être envoyé,
  * tandis que ce service s'occupe uniquement de l'envoi.
+ *
+ * Deux modes d'envoi :
+ * - PRODUCTION (Render) : API HTTPS de Brevo, car le plan gratuit
+ *   de Render bloque les ports SMTP (25, 465, 587) ;
+ * - LOCAL : Gmail SMTP, utilisé automatiquement lorsque
+ *   la variable BREVO_API_KEY n'est pas définie.
  */
 @Service
 public class EmailService {
@@ -23,18 +35,49 @@ public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     /**
+     * Nom affiché comme expéditeur des emails.
+     */
+    private static final String NOM_EXPEDITEUR = "MyStudentGuide";
+
+    /**
      * Composant Spring permettant d'envoyer les emails
-     * via le serveur SMTP configuré dans application.properties.
+     * via le serveur SMTP (utilisé en local).
      */
     private final JavaMailSender mailSender;
 
     /**
+     * Client HTTP vers l'API de Brevo (utilisé en production).
+     */
+    private final RestClient brevoClient;
+
+    /**
+     * Clé API Brevo (variable d'environnement BREVO_API_KEY).
+     * Si elle est vide, l'envoi se fait par SMTP.
+     */
+    private final String brevoApiKey;
+
+    /**
+     * Adresse de l'expéditeur.
+     * Elle doit être validée dans Brevo (menu "Senders").
+     */
+    private final String expediteur;
+
+    /**
      * Constructeur du service.
      *
-     * @param mailSender composant permettant d'envoyer les emails
+     * @param mailSender composant permettant d'envoyer les emails par SMTP
+     * @param brevoApiKey clé API Brevo (vide en local)
+     * @param expediteur adresse email de l'expéditeur
      */
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(
+            JavaMailSender mailSender,
+            @Value("${brevo.api-key:}") String brevoApiKey,
+            @Value("${spring.mail.username}") String expediteur
+    ) {
         this.mailSender = mailSender;
+        this.brevoApiKey = brevoApiKey;
+        this.expediteur = expediteur;
+        this.brevoClient = RestClient.create("https://api.brevo.com/v3");
     }
 
     /**
@@ -50,26 +93,55 @@ public class EmailService {
             String sujet,
             String contenu
     ) {
-        // Création du message email.
-        SimpleMailMessage message = new SimpleMailMessage();
-
-        // Définition du destinataire.
-        message.setTo(destinataire);
-
-        // Définition du sujet.
-        message.setSubject(sujet);
-
-        // Définition du contenu du message.
-        message.setText(contenu);
-
-        // Envoi de l'email via Gmail SMTP.
-        // Une panne SMTP ne doit jamais faire échouer l'action de l'utilisateur
+        // Une panne d'envoi ne doit jamais faire échouer l'action de l'utilisateur
         // (inscription, création de démarche...) : on journalise l'erreur.
         try {
-            mailSender.send(message);
+            if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+                envoyerViaBrevo(destinataire, sujet, contenu);
+            } else {
+                envoyerViaSmtp(destinataire, sujet, contenu);
+            }
         } catch (Exception exception) {
             log.warn("Échec d'envoi de l'email '{}' : {}", sujet, exception.getMessage());
         }
+    }
+
+    /**
+     * Envoi via l'API HTTPS de Brevo (production).
+     */
+    private void envoyerViaBrevo(
+            String destinataire,
+            String sujet,
+            String contenu
+    ) {
+        brevoClient.post()
+                .uri("/smtp/email")
+                .header("api-key", brevoApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of(
+                        "sender", Map.of("name", NOM_EXPEDITEUR, "email", expediteur),
+                        "to", List.of(Map.of("email", destinataire)),
+                        "subject", sujet,
+                        "textContent", contenu
+                ))
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    /**
+     * Envoi via Gmail SMTP (développement local).
+     */
+    private void envoyerViaSmtp(
+            String destinataire,
+            String sujet,
+            String contenu
+    ) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(expediteur);
+        message.setTo(destinataire);
+        message.setSubject(sujet);
+        message.setText(contenu);
+        mailSender.send(message);
     }
 
     // ==========================================================
@@ -273,13 +345,6 @@ public class EmailService {
     }
 
     /**
-     * Confirme à l'étudiant que son mot de passe vient
-     * d'être modifié.
-     *
-     * @param email email de l'étudiant
-     * @param prenom prénom de l'étudiant
-     */
-    /**
      * E-mail contenant le lien de réinitialisation du mot de passe.
      * Le lien est à usage unique et valable {minutes} minutes.
      */
@@ -311,6 +376,13 @@ public class EmailService {
         envoyerEmail(email, sujet, contenu);
     }
 
+    /**
+     * Confirme à l'étudiant que son mot de passe vient
+     * d'être modifié.
+     *
+     * @param email email de l'étudiant
+     * @param prenom prénom de l'étudiant
+     */
     @Async
     public void envoyerConfirmationModificationMotDePasse(
             String email,
