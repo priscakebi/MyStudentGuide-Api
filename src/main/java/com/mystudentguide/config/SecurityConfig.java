@@ -165,6 +165,26 @@ public class SecurityConfig {
                                                                 "/api/auth/reset-password")
                                                 .permitAll()
 
+                                                // Avis publics affichés sur la page d'accueil
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/avis/public",
+                                                                "/api/avis/public/**")
+                                                .permitAll()
+
+                                                /*
+                                                 * Page d'erreur interne de Spring.
+                                                 *
+                                                 * Quand une erreur survient (404, 500...), Spring
+                                                 * redirige la requête vers /error. Le filtre JWT
+                                                 * ne s'exécute pas sur cette redirection interne :
+                                                 * sans cette règle, toute erreur était transformée
+                                                 * en 401, ce qui faisait croire au frontend que la
+                                                 * session avait expiré et déconnectait l'utilisateur.
+                                                 */
+                                                .requestMatchers("/error")
+                                                .permitAll()
+
                                                 /*
                                                  * ============================================
                                                  * SWAGGER
