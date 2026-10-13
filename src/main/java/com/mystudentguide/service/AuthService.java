@@ -255,4 +255,27 @@ public class AuthService {
             user.getRole().toString()
         );
     }
+
+    /**
+     * Renouvelle le JWT de l'utilisateur déjà connecté.
+     *
+     * Appelé par le front (IdleService) toutes les 10 minutes
+     * tant que l'utilisateur est actif.
+     */
+    public AuthResponse refresh(String email) {
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(
+                () -> new IllegalArgumentException(
+                    "Utilisateur introuvable"
+                )
+            );
+
+        return new AuthResponse(
+            jwtService.generateToken(user),
+            user.getId(),
+            user.getEmail(),
+            user.getRole().toString()
+        );
+    }
 }

@@ -7,6 +7,7 @@ import com.mystudentguide.service.NotificationService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -82,6 +83,24 @@ public class NotificationController {
     }
 
     /** Une notification par identifiant (uniquement la sienne). */
+    /**
+     * GET /api/notifications/admin/all
+     *
+     * Notifications de l'administrateur connecté (compteur du
+     * tableau de bord admin). Cet endpoint était appelé par le front
+     * mais n'existait pas.
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Notification>> getAdminNotifications(
+            Authentication authentication
+    ) {
+        User admin = getCurrentUser(authentication);
+
+        return ResponseEntity.ok(
+                notificationService.getNotificationsByUser(admin.getId()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Notification> getNotificationById(
             @PathVariable Long id,

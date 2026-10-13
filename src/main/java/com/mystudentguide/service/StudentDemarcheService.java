@@ -151,7 +151,7 @@ public class StudentDemarcheService {
     @Transactional(readOnly = true)
     public StudentDemarche getStudentDemarcheById(Long id) {
 
-        return studentDemarcheRepository.findById(id)
+        return studentDemarcheRepository.findByIdWithDetails(id)
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Suivi de démarche introuvable avec l'id : "
@@ -522,7 +522,49 @@ public class StudentDemarcheService {
         // Mise à jour du statut
         // --------------------------------------------------------
 
+        DemarcheStatus ancienStatut = studentDemarche.getStatut();
+
         studentDemarche.setStatut(nouveauStatut);
+
+
+        // --------------------------------------------------------
+        // Progression : date de début et envoi des documents
+        // --------------------------------------------------------
+
+        if (nouveauStatut == DemarcheStatus.EN_COURS
+                && studentDemarche.getDateDebut() == null) {
+
+            /*
+             * Clic sur « Commencer » : la démarche passe EN_COURS.
+             * La date de début sert de point de départ au rappel
+             * de J+10 (« Avez-vous envoyé vos documents ? »).
+             */
+            studentDemarche.setDateDebut(LocalDate.now());
+            studentDemarche.setDernierRappel(null);
+        }
+
+        if (nouveauStatut == DemarcheStatus.A_FAIRE
+                || nouveauStatut == DemarcheStatus.NON_CONCERNEE) {
+
+            /*
+             * Retour en arrière : la progression repart de zéro.
+             */
+            studentDemarche.setDateDebut(null);
+            studentDemarche.setDocumentsEnvoyes(false);
+            studentDemarche.setDateEnvoiDocuments(null);
+        }
+
+        if (nouveauStatut != DemarcheStatus.EN_COURS
+                && ancienStatut != nouveauStatut) {
+
+            /*
+             * La question sur les documents n'a plus lieu d'être.
+             */
+            notificationService.closePendingActions(
+                    studentDemarche.getId(),
+                    Notification.ACTION_CONFIRMER_DOCUMENTS
+            );
+        }
 
 
         // --------------------------------------------------------
@@ -630,6 +672,52 @@ public class StudentDemarcheService {
      * @param commentaire commentaire à enregistrer
      * @return StudentDemarche mise à jour
      */
+    /**
+     * Réponse de l'étudiant à la question de J+10 :
+     * « Avez-vous envoyé vos documents sur la plateforme dédiée ? ».
+     *
+     * - Oui : la progression passe à 50 %.
+     * - Pas encore : la question sera reposée 10 jours plus tard.
+     */
+    @Transactional
+    public StudentDemarche confirmerEnvoiDocuments(
+            Long id,
+            boolean envoyes
+    ) {
+
+        StudentDemarche studentDemarche =
+                getStudentDemarcheById(id);
+
+        if (studentDemarche.getStatut() != DemarcheStatus.EN_COURS) {
+
+            throw new IllegalArgumentException(
+                    "Seule une démarche en cours peut être mise à jour."
+            );
+        }
+
+        if (envoyes) {
+
+            studentDemarche.setDocumentsEnvoyes(true);
+            studentDemarche.setDateEnvoiDocuments(LocalDate.now());
+
+        } else {
+
+            /*
+             * Le compteur de 10 jours repart d'aujourd'hui.
+             */
+            studentDemarche.setDocumentsEnvoyes(false);
+            studentDemarche.setDernierRappel(LocalDate.now());
+        }
+
+        notificationService.closePendingActions(
+                studentDemarche.getId(),
+                Notification.ACTION_CONFIRMER_DOCUMENTS
+        );
+
+        return studentDemarcheRepository.save(studentDemarche);
+    }
+
+
     @Transactional
     public StudentDemarche updateCommentaire(
             Long id,

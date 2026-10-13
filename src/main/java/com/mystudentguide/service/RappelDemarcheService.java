@@ -6,6 +6,8 @@ import com.mystudentguide.enums.DemarcheStatus;
 import com.mystudentguide.enums.NotificationType;
 import com.mystudentguide.repository.StudentDemarcheRepository;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,10 +85,16 @@ public class RappelDemarcheService {
      * minute = 0
      * heure = 9
      *
-     * La tâche s'exécute donc tous les jours à 09h00.
+     * La vérification tourne toutes les heures ET au démarrage de l'API.
+     *
+     * Pourquoi ? Sur l'offre gratuite de Render, l'API se met en veille
+     * après quelques minutes sans visite : une tâche fixée à 09h00 serait
+     * souvent manquée. Les rappels ne sont pas envoyés en double :
+     * - rappel de 10 jours : protégé par la date du dernier rappel ;
+     * - échéances 7 j / 3 j : protégées par existsNotification(...).
      */
-    // Exécution automatique tous les jours à 09h00.
-@Scheduled(cron = "0 0 9 * * *")
+    @Scheduled(cron = "0 0 * * * *")
+    @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void envoyerRappelsAutomatiques() {
 
@@ -145,67 +153,56 @@ public class RappelDemarcheService {
 
 
             // ====================================================
+            // ====================================================
             // RAPPEL N°1 : TOUS LES 10 JOURS
             // ====================================================
 
-            /*
-             * Si un rappel a déjà été envoyé,
-             * on utilise la date du dernier rappel.
-             *
-             * Sinon, on utilise la date d'attribution.
-             */
-            LocalDate dateReference =
-                    studentDemarche.getDernierRappel();
-
-            if (dateReference == null) {
-
-                dateReference =
-                        studentDemarche.getDateAttribution();
-            }
-
-
-            // ----------------------------------------------------
-            // Vérifier que la date de référence existe
-            // ----------------------------------------------------
-
-            if (dateReference != null) {
+            if (studentDemarche.getStatut() == DemarcheStatus.EN_COURS) {
 
                 /*
-                 * Calcul du nombre de jours écoulés
-                 * depuis la date de référence.
+                 * Démarche EN COURS : 10 jours après le clic sur
+                 * « Commencer » (ou après la dernière réponse
+                 * « Pas encore »), on demande à l'étudiant s'il a
+                 * envoyé ses documents sur la plateforme dédiée.
+                 *
+                 * La notification porte l'action CONFIRMER_DOCUMENTS :
+                 * le front affiche alors les boutons « Oui » / « Pas encore ».
                  */
-                long nombreDeJours =
-                        ChronoUnit.DAYS.between(
-                                dateReference,
-                                aujourdHui
-                        );
+                envoyerQuestionDocuments(
+                        studentDemarche,
+                        titreDemarche,
+                        aujourdHui
+                );
 
+            } else {
 
-                // ------------------------------------------------
-                // Vérifier si les 10 jours sont écoulés
-                // ------------------------------------------------
+                /*
+                 * Démarche À FAIRE : simple rappel tous les 10 jours
+                 * (date du dernier rappel, sinon date d'attribution).
+                 */
+                LocalDate dateReference =
+                        studentDemarche.getDernierRappel();
 
-                if (nombreDeJours >= 10) {
+                if (dateReference == null) {
 
-                    // --------------------------------------------
-                    // Créer la notification de rappel
-                    // --------------------------------------------
+                    dateReference =
+                            studentDemarche.getDateAttribution();
+                }
+
+                if (dateReference != null
+                        && ChronoUnit.DAYS.between(dateReference, aujourdHui) >= 10) {
 
                     Notification notification =
                             Notification.builder()
-                                    .titre(
-                                            "Rappel concernant votre démarche"
-                                    )
+                                    .titre("Rappel concernant votre démarche")
                                     .message(
-                                            "N'oubliez pas de commencer ou "
-                                                    + "de poursuivre votre démarche : \""
+                                            "N'oubliez pas de commencer votre démarche : \""
                                                     + titreDemarche
                                                     + "\"."
                                     )
-                                    .type(
-                                            NotificationType.ECHEANCE
-                                    )
+                                    .type(NotificationType.ECHEANCE)
                                     .lu(false)
+                                    .studentDemarcheId(studentDemarche.getId())
                                     .user(
                                             studentDemarche
                                                     .getStudentProfile()
@@ -213,21 +210,11 @@ public class RappelDemarcheService {
                                     )
                                     .build();
 
+                    notificationService.saveNotification(notification);
 
-                    // Enregistrer la notification.
-                    notificationService.saveNotification(
-                            notification
-                    );
+                    studentDemarche.setDernierRappel(aujourdHui);
 
-
-                    // Enregistrer la date du rappel.
-                    studentDemarche.setDernierRappel(
-                            aujourdHui
-                    );
-
-                    studentDemarcheRepository.save(
-                            studentDemarche
-                    );
+                    studentDemarcheRepository.save(studentDemarche);
                 }
             }
 
@@ -415,5 +402,76 @@ if (joursRestants == 3) {
     }
 }
         }
+    }
+    // ============================================================
+    // QUESTION DE J+10 : « AVEZ-VOUS ENVOYÉ VOS DOCUMENTS ? »
+    // ============================================================
+
+    /**
+     * Envoie la question sur l'envoi des documents lorsque :
+     *
+     * - la démarche est EN_COURS ;
+     * - les documents ne sont pas encore confirmés ;
+     * - 10 jours se sont écoulés depuis la date de début
+     *   (ou depuis la dernière réponse « Pas encore ») ;
+     * - aucune question identique n'attend déjà une réponse.
+     */
+    private void envoyerQuestionDocuments(
+            StudentDemarche studentDemarche,
+            String titreDemarche,
+            LocalDate aujourdHui
+    ) {
+
+        if (studentDemarche.isDocumentsEnvoyes()) {
+            return;
+        }
+
+        LocalDate dateReference = studentDemarche.getDernierRappel();
+
+        if (dateReference == null) {
+            dateReference = studentDemarche.getDateDebut();
+        }
+
+        if (dateReference == null) {
+            dateReference = studentDemarche.getDateAttribution();
+        }
+
+        if (dateReference == null
+                || ChronoUnit.DAYS.between(dateReference, aujourdHui) < 10) {
+            return;
+        }
+
+        if (notificationService.hasPendingAction(
+                studentDemarche.getId(),
+                Notification.ACTION_CONFIRMER_DOCUMENTS)) {
+            return;
+        }
+
+        Notification notification =
+                Notification.builder()
+                        .titre("Avez-vous envoyé vos documents ?")
+                        .message(
+                                "Vous avez commencé la démarche \""
+                                        + titreDemarche
+                                        + "\". Avez-vous envoyé vos documents "
+                                        + "sur la plateforme dédiée à cette démarche ?"
+                        )
+                        .type(NotificationType.DEMARCHE)
+                        .lu(false)
+                        .studentDemarcheId(studentDemarche.getId())
+                        .action(Notification.ACTION_CONFIRMER_DOCUMENTS)
+                        .actionTraitee(false)
+                        .user(
+                                studentDemarche
+                                        .getStudentProfile()
+                                        .getUser()
+                        )
+                        .build();
+
+        notificationService.saveNotification(notification);
+
+        studentDemarche.setDernierRappel(aujourdHui);
+
+        studentDemarcheRepository.save(studentDemarche);
     }
 }

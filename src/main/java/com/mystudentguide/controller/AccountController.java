@@ -1,6 +1,8 @@
 package com.mystudentguide.controller;
 
+import com.mystudentguide.dto.account.ChangePasswordRequest;
 import com.mystudentguide.dto.account.DeleteAccountRequest;
+import jakarta.validation.Valid;
 import com.mystudentguide.service.AccountService;
 
 import org.springframework.http.ResponseEntity;
@@ -93,11 +95,10 @@ public class AccountController {
             /*
              * Le mot de passe fourni est incorrect.
              *
-             * HTTP 401 Unauthorized indique que
-             * l'authentification nécessaire à l'opération
-             * n'est pas valide.
+             * HTTP 400 (et non 401) : côté front, un 401
+             * déconnecte automatiquement l'utilisateur.
              */
-            return ResponseEntity.status(401).body(
+            return ResponseEntity.badRequest().body(
                     new AccountResponse(
                             false,
                             "Le mot de passe est incorrect."
@@ -143,6 +144,42 @@ public class AccountController {
      *     "message": "Votre compte a été supprimé avec succès."
      * }
      */
+    // ============================================================
+    // CHANGER LE MOT DE PASSE
+    // ============================================================
+
+    /**
+     * PUT /api/account/password
+     *
+     * Corps : { "currentPassword": "...", "newPassword": "..." }
+     *
+     * - 200 : mot de passe modifié ;
+     * - 400 : mot de passe actuel incorrect ou nouveau mot de passe invalide.
+     *
+     * (Pas de 401 ici : côté front, un 401 déconnecte l'utilisateur.)
+     */
+    @PutMapping("/password")
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        try {
+            accountService.changePassword(
+                    request.getCurrentPassword(),
+                    request.getNewPassword()
+            );
+            return ResponseEntity.ok(
+                    new AccountResponse(
+                            true,
+                            "Votre mot de passe a été modifié avec succès."
+                    )
+            );
+        } catch (BadCredentialsException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                    new AccountResponse(false, e.getMessage())
+            );
+        }
+    }
+
     private static class AccountResponse {
 
         /**

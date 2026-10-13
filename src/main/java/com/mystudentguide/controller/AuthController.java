@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -123,6 +124,24 @@ public class AuthController {
      * La réponse est TOUJOURS la même (200), que l'adresse existe ou non,
      * pour ne pas révéler quelles adresses sont inscrites.
      */
+    /**
+     * POST /api/auth/refresh
+     *
+     * Renvoie un nouveau JWT pour l'utilisateur connecté
+     * (jeton actuel encore valide obligatoire).
+     *
+     * Cet endpoint était appelé par le front mais n'existait pas.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(authService.refresh(authentication.getName()));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request
