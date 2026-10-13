@@ -117,14 +117,6 @@ public class AuthController {
     }
 
     /**
-     * Mot de passe oublié : envoie un lien de réinitialisation par e-mail.
-     *
-     * POST /api/auth/forgot-password   { "email": "...", "espace": "ETUDIANT" | "ADMIN" }
-     *
-     * La réponse est TOUJOURS la même (200), que l'adresse existe ou non,
-     * pour ne pas révéler quelles adresses sont inscrites.
-     */
-    /**
      * POST /api/auth/refresh
      *
      * Renvoie un nouveau JWT pour l'utilisateur connecté
@@ -142,6 +134,14 @@ public class AuthController {
         return ResponseEntity.ok(authService.refresh(authentication.getName()));
     }
 
+    /**
+     * Mot de passe oublié : envoie un lien de réinitialisation par e-mail.
+     *
+     * POST /api/auth/forgot-password   { "email": "...", "espace": "ETUDIANT" | "ADMIN" }
+     *
+     * La réponse est TOUJOURS la même (200), que l'adresse existe ou non,
+     * pour ne pas révéler quelles adresses sont inscrites.
+     */
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request

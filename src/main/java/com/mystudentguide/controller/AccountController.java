@@ -133,17 +133,6 @@ public class AccountController {
         }
     }
 
-    /**
-     * Petite classe utilisée pour construire une réponse JSON
-     * simple après le traitement de la suppression.
-     *
-     * Exemple de réponse :
-     *
-     * {
-     *     "success": true,
-     *     "message": "Votre compte a été supprimé avec succès."
-     * }
-     */
     // ============================================================
     // CHANGER LE MOT DE PASSE
     // ============================================================
@@ -180,6 +169,17 @@ public class AccountController {
         }
     }
 
+    /**
+     * Petite classe utilisée pour construire une réponse JSON
+     * simple après le traitement de la suppression.
+     *
+     * Exemple de réponse :
+     *
+     * {
+     *     "success": true,
+     *     "message": "Votre compte a été supprimé avec succès."
+     * }
+     */
     private static class AccountResponse {
 
         /**

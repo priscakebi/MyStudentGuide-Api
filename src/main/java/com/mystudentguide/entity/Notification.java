@@ -102,10 +102,6 @@ public class Notification {
     private User user;
 
     /**
-     * Initialise automatiquement la date de création
-     * avant l'insertion en base.
-     */
-    /**
      * Démarche suivie concernée par la notification (facultatif).
      *
      * Utilisé par le rappel de J+10 : la notification affiche
@@ -128,6 +124,10 @@ public class Notification {
     @Column(name = "action_traitee")
     private Boolean actionTraitee;
 
+    /**
+     * Initialise automatiquement la date de création
+     * avant l'insertion en base.
+     */
     @PrePersist
     protected void onCreate() {
 

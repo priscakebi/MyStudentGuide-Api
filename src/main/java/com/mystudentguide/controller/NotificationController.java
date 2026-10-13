@@ -82,7 +82,6 @@ public class NotificationController {
                 notificationService.countUnreadNotifications(userId));
     }
 
-    /** Une notification par identifiant (uniquement la sienne). */
     /**
      * GET /api/notifications/admin/all
      *
@@ -101,6 +100,7 @@ public class NotificationController {
                 notificationService.getNotificationsByUser(admin.getId()));
     }
 
+    /** Une notification par identifiant (uniquement la sienne). */
     @GetMapping("/{id}")
     public ResponseEntity<Notification> getNotificationById(
             @PathVariable Long id,

@@ -155,6 +155,21 @@ public interface StudentDemarcheRepository
             @Param("demarcheId") Long demarcheId
     );
 
+    /**
+     * Charge un suivi avec sa démarche et son profil étudiant
+     * (évite les erreurs de chargement paresseux lors de la
+     * sérialisation JSON, open-in-view étant désactivé).
+     */
+    @Query("""
+        SELECT sd
+        FROM StudentDemarche sd
+        JOIN FETCH sd.demarche
+        JOIN FETCH sd.studentProfile sp
+        LEFT JOIN FETCH sp.user
+        WHERE sd.id = :id
+    """)
+    Optional<StudentDemarche> findByIdWithDetails(@Param("id") Long id);
+
 
     // ============================================================
     // VÉRIFIER SI LE COUPLE ÉTUDIANT / DÉMARCHE EXISTE
@@ -180,21 +195,6 @@ public interface StudentDemarcheRepository
      * @param demarcheId identifiant de la démarche
      * @return true si l'association existe déjà
      */
-    /**
-     * Charge un suivi avec sa démarche et son profil étudiant
-     * (évite les erreurs de chargement paresseux lors de la
-     * sérialisation JSON, open-in-view étant désactivé).
-     */
-    @Query("""
-        SELECT sd
-        FROM StudentDemarche sd
-        JOIN FETCH sd.demarche
-        JOIN FETCH sd.studentProfile sp
-        LEFT JOIN FETCH sp.user
-        WHERE sd.id = :id
-    """)
-    Optional<StudentDemarche> findByIdWithDetails(@Param("id") Long id);
-
     boolean existsByStudentProfile_IdAndDemarche_Id(
             Long studentProfileId,
             Long demarcheId

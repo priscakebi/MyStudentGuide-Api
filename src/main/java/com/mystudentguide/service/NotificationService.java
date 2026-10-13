@@ -159,17 +159,6 @@ public boolean existsNotification(
     }
 
     /**
-     * Marque une notification comme lue.
-     *
-     * Lorsqu'un étudiant consulte une notification,
-     * son statut "lu" passe de false à true.
-     *
-     * @param id identifiant de la notification
-     * @return notification mise à jour
-     *
-     * @throws RuntimeException si la notification n'existe pas
-     */
-    /**
      * Vrai si une question « à action » attend encore
      * la réponse de l'étudiant pour ce suivi.
      */
@@ -193,6 +182,17 @@ public boolean existsNotification(
         notificationRepository.saveAll(pending);
     }
 
+    /**
+     * Marque une notification comme lue.
+     *
+     * Lorsqu'un étudiant consulte une notification,
+     * son statut "lu" passe de false à true.
+     *
+     * @param id identifiant de la notification
+     * @return notification mise à jour
+     *
+     * @throws RuntimeException si la notification n'existe pas
+     */
     public Notification markAsRead(Long id) {
 
         Notification notification = notificationRepository

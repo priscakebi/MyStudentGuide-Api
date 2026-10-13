@@ -24,8 +24,8 @@ import java.util.List;
  * FONCTIONNEMENT
  * ------------------------------------------------------------
  *
- * Une tâche planifiée est exécutée automatiquement une fois
- * par jour à 09h00.
+ * Une tâche planifiée est exécutée automatiquement toutes
+ * les heures, ainsi qu'au démarrage de l'API.
  *
  * Elle recherche les démarches qui sont :
  *
@@ -76,14 +76,13 @@ public class RappelDemarcheService {
     // ============================================================
 
     /**
-     * Vérifie quotidiennement les démarches nécessitant
-     * un rappel.
+     * Vérifie les démarches nécessitant un rappel.
      *
      * L'expression cron signifie :
      *
      * seconde = 0
      * minute = 0
-     * heure = 9
+     * heure = toutes
      *
      * La vérification tourne toutes les heures ET au démarrage de l'API.
      *

@@ -464,23 +464,6 @@ public class StudentDemarcheController {
 
 
     /**
-     * ============================================================
-     * MODIFIER LE COMMENTAIRE
-     * ============================================================
-     *
-     * Endpoint :
-     *
-     * PATCH /api/student-demarches/{id}/commentaire
-     *
-     * L'étudiant peut modifier uniquement le commentaire
-     * de sa propre démarche.
-     *
-     * @param id identifiant de la StudentDemarche
-     * @param commentaire nouveau commentaire
-     * @param authentication utilisateur connecté
-     * @return StudentDemarche mise à jour
-     */
-    /**
      * Réponse de l'étudiant au rappel de J+10.
      *
      * PATCH /api/student-demarches/{id}/documents?envoyes=true|false
@@ -515,6 +498,23 @@ public class StudentDemarcheController {
     }
 
 
+    /**
+     * ============================================================
+     * MODIFIER LE COMMENTAIRE
+     * ============================================================
+     *
+     * Endpoint :
+     *
+     * PATCH /api/student-demarches/{id}/commentaire
+     *
+     * L'étudiant peut modifier uniquement le commentaire
+     * de sa propre démarche.
+     *
+     * @param id identifiant de la StudentDemarche
+     * @param commentaire nouveau commentaire
+     * @param authentication utilisateur connecté
+     * @return StudentDemarche mise à jour
+     */
     @PatchMapping("/{id}/commentaire")
     @PreAuthorize("hasAnyRole('ADMIN', 'ETUDIANT')")
     public ResponseEntity<StudentDemarche> updateCommentaire(
