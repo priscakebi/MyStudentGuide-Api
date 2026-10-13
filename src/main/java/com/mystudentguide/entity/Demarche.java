@@ -99,9 +99,9 @@ public class Demarche {
      * Plusieurs démarches peuvent appartenir
      * à une même catégorie.
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "categorie_id", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "demarches"})
     private Categorie categorie;
 
     /**
