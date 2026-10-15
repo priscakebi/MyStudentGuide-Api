@@ -1,5 +1,6 @@
 package com.mystudentguide.exception;
 
+import com.mystudentguide.security.CompteTemporairementBloqueException;
 import com.mystudentguide.servicepublic.ServicePublicIndisponibleException;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -66,6 +67,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(body(HttpStatus.BAD_REQUEST, ex.getMessage()));
+    }
+
+    /**
+     * Trop de tentatives de connexion : 429 + Retry-After (en secondes),
+     * pour que le front affiche le délai d'attente.
+     */
+    @ExceptionHandler(CompteTemporairementBloqueException.class)
+    public ResponseEntity<Map<String, Object>> handleCompteBloque(CompteTemporairementBloqueException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getSecondesRestantes()))
+                .body(body(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage()));
     }
 
     /** Échec d'authentification (identifiants incorrects, compte désactivé...) : 401. Message volontairement générique. */

@@ -9,9 +9,11 @@ import com.mystudentguide.enums.NotificationType;
 import com.mystudentguide.enums.RoleType;
 import com.mystudentguide.repository.UserRepository;
 import com.mystudentguide.security.JwtService;
+import com.mystudentguide.security.LoginAttemptService;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +69,11 @@ public class AuthService {
     private final EmailService emailService;
 
     /**
+     * Limite les tentatives de connexion (force brute).
+     */
+    private final LoginAttemptService loginAttemptService;
+
+    /**
      * Constructeur du service.
      *
      * Toutes les dépendances nécessaires au fonctionnement
@@ -78,6 +85,7 @@ public class AuthService {
      * @param jwtService service de gestion des JWT
      * @param notificationService service des notifications internes
      * @param emailService service d'envoi des emails
+     * @param loginAttemptService limitation des tentatives de connexion
      */
     public AuthService(
         UserRepository userRepository,
@@ -85,7 +93,8 @@ public class AuthService {
         AuthenticationManager authenticationManager,
         JwtService jwtService,
         NotificationService notificationService,
-        EmailService emailService
+        EmailService emailService,
+        LoginAttemptService loginAttemptService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -93,6 +102,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.notificationService = notificationService;
         this.emailService = emailService;
+        this.loginAttemptService = loginAttemptService;
     }
 
     /**
@@ -228,13 +238,23 @@ public class AuthService {
 
         request.setEmail(request.getEmail().trim());
 
+        // Compte bloqué après trop d'échecs : refus AVANT de tester le mot de passe.
+        loginAttemptService.verifier(request.getEmail());
+
         // Vérifie les identifiants fournis par l'utilisateur.
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                request.getEmail(),
-                request.getPassword()
-            )
-        );
+        try {
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    request.getEmail(),
+                    request.getPassword()
+                )
+            );
+        } catch (AuthenticationException e) {
+            loginAttemptService.echec(request.getEmail());
+            throw e;
+        }
+
+        loginAttemptService.succes(request.getEmail());
 
         // Recherche l'utilisateur correspondant à l'adresse email.
         User user = userRepository.findByEmail(request.getEmail())

@@ -1,11 +1,14 @@
 package com.mystudentguide.service;
 
 import com.mystudentguide.dto.auth.AuthResponse;
+import com.mystudentguide.dto.auth.LoginRequest;
 import com.mystudentguide.dto.auth.RegisterRequest;
 import com.mystudentguide.entity.User;
 import com.mystudentguide.enums.RoleType;
 import com.mystudentguide.repository.UserRepository;
+import com.mystudentguide.security.CompteTemporairementBloqueException;
 import com.mystudentguide.security.JwtService;
+import com.mystudentguide.security.LoginAttemptService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,15 +17,18 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +43,7 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
     @Mock private NotificationService notificationService;
     @Mock private EmailService emailService;
+    @Mock private LoginAttemptService loginAttemptService;
 
     private AuthService authService;
 
@@ -48,7 +55,8 @@ class AuthServiceTest {
                 authenticationManager,
                 jwtService,
                 notificationService,
-                emailService);
+                emailService,
+                loginAttemptService);
     }
 
     private RegisterRequest request(String email) {
@@ -92,5 +100,57 @@ class AuthServiceTest {
         assertThat(response.getRole()).isEqualTo("ETUDIANT");
 
         verify(emailService).envoyerConfirmationInscription(anyString(), anyString());
+    }
+
+
+    // ==============================================================
+    // CONNEXION : LIMITATION DES TENTATIVES
+    // ==============================================================
+
+    private static LoginRequest connexion(String email, String motDePasse) {
+        LoginRequest request = new LoginRequest();
+        request.setEmail(email);
+        request.setPassword(motDePasse);
+        return request;
+    }
+
+    @Test
+    void login_compteBloque_leMotDePasseNEstPasTeste() {
+        doThrow(new CompteTemporairementBloqueException(600))
+                .when(loginAttemptService).verifier("prisca@email.com");
+
+        assertThatThrownBy(() -> authService.login(connexion(" prisca@email.com ", "MotDePasse123!")))
+                .isInstanceOf(CompteTemporairementBloqueException.class);
+
+        verify(authenticationManager, never()).authenticate(any());
+    }
+
+    @Test
+    void login_mauvaisMotDePasse_compteUnEchec() {
+        when(authenticationManager.authenticate(any()))
+                .thenThrow(new BadCredentialsException("mauvais mot de passe"));
+
+        assertThatThrownBy(() -> authService.login(connexion("prisca@email.com", "faux")))
+                .isInstanceOf(BadCredentialsException.class);
+
+        verify(loginAttemptService).echec("prisca@email.com");
+        verify(loginAttemptService, never()).succes(anyString());
+    }
+
+    @Test
+    void login_reussi_remetLeCompteurAZero() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("prisca@email.com");
+        user.setRole(RoleType.ETUDIANT);
+
+        when(userRepository.findByEmail("prisca@email.com")).thenReturn(Optional.of(user));
+        when(jwtService.generateToken(user)).thenReturn("jwt-token");
+
+        AuthResponse response = authService.login(connexion("prisca@email.com", "MotDePasse123!"));
+
+        assertThat(response.getToken()).isEqualTo("jwt-token");
+        verify(loginAttemptService).succes("prisca@email.com");
+        verify(loginAttemptService, never()).echec(anyString());
     }
 }
