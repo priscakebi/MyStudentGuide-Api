@@ -35,4 +35,10 @@ public interface DemarcheRepository extends JpaRepository<Demarche, Long> {
      * @return liste des démarches de cette catégorie
      */
     List<Demarche> findByCategorieId(Long categorieId);
+
+    /** Démarches importées depuis une fiche Service-Public. */
+    List<Demarche> findBySourceIdIsNotNull();
+
+    /** Vrai si la fiche Service-Public a déjà été importée. */
+    boolean existsBySourceId(String sourceId);
 }

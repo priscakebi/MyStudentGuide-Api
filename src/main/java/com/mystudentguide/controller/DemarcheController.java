@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -111,13 +112,18 @@ public class DemarcheController {
      * @return liste de toutes les démarches
      */
     @GetMapping
-    public ResponseEntity<List<Demarche>> getAllDemarches() {
+    public ResponseEntity<List<Demarche>> getAllDemarches(
+            Authentication authentication
+    ) {
 
         /*
          * Récupération des démarches via le service.
+         *
+         * Les brouillons (ex. fiches Service-Public importées
+         * mais pas encore validées) ne sont renvoyés qu'aux admins.
          */
         List<Demarche> demarches =
-                demarcheService.getAllDemarches();
+                demarcheService.getAllDemarches(isAdmin(authentication));
 
         /*
          * Retourne HTTP 200 OK avec la liste.
@@ -157,7 +163,8 @@ public class DemarcheController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<DemarcheDetailDTO> getDemarcheById(
-            @PathVariable Long id
+            @PathVariable Long id,
+            Authentication authentication
     ) {
 
         /*
@@ -171,7 +178,7 @@ public class DemarcheController {
          * la construction du DTO.
          */
         DemarcheDetailDTO demarche =
-                demarcheService.getDemarcheDetailById(id);
+                demarcheService.getDemarcheDetailById(id, isAdmin(authentication));
 
         /*
          * Retourne HTTP 200 OK avec le détail
@@ -201,7 +208,8 @@ public class DemarcheController {
      */
     @GetMapping("/categorie/{categorieId}")
     public ResponseEntity<List<Demarche>> getByCategorie(
-            @PathVariable Long categorieId
+            @PathVariable Long categorieId,
+            Authentication authentication
     ) {
 
         try {
@@ -214,6 +222,13 @@ public class DemarcheController {
                     demarcheService.getDemarchesByCategorie(
                             categorieId
                     );
+
+            // Brouillons réservés aux administrateurs.
+            if (!isAdmin(authentication)) {
+                demarches = demarches.stream()
+                        .filter(Demarche::isPubliee)
+                        .toList();
+            }
 
             /*
              * Retourne HTTP 200 OK.
@@ -386,5 +401,18 @@ public class DemarcheController {
              */
             return ResponseEntity.notFound().build();
         }
+    }
+
+
+    /**
+     * Vrai si la requête vient d'un administrateur connecté.
+     *
+     * Les routes GET sont publiques : authentication vaut null
+     * pour un visiteur anonyme.
+     */
+    private boolean isAdmin(Authentication authentication) {
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                        .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

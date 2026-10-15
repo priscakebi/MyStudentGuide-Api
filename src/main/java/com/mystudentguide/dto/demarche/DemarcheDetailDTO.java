@@ -91,4 +91,12 @@ public class DemarcheDetailDTO {
      * Cette liste sera alimentée à partir des LienOfficiel.
      */
     private List<LienOfficielDTO> liensOfficiels;
+
+    /**
+     * Fiche Service-Public d'origine (null si la démarche a été saisie
+     * à la main). La mention de la source et de sa date de mise à jour
+     * est obligatoire (Licence Ouverte).
+     */
+    private String sourceUrl;
+    private LocalDate sourceDateMaj;
 }

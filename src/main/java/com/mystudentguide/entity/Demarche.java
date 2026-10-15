@@ -3,6 +3,7 @@ package com.mystudentguide.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import com.mystudentguide.enums.StatutPublication;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -86,6 +87,49 @@ public class Demarche {
      * de date limite fixe.
      */
     private LocalDate dateLimite;
+
+    // ============================================================
+    // PUBLICATION ET SOURCE OFFICIELLE (import Service-Public)
+    // ============================================================
+
+    /**
+     * BROUILLON : visible uniquement par les administrateurs.
+     * null (démarches créées avant ce champ) = publiée.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statut_publication", length = 20)
+    @Builder.Default
+    private StatutPublication statutPublication = StatutPublication.PUBLIEE;
+
+    /** Identifiant de la fiche Service-Public d'origine (ex. : F2231). */
+    @Column(name = "source_id", length = 20)
+    private String sourceId;
+
+    /** Adresse de la fiche officielle, affichée comme source. */
+    @Column(name = "source_url", length = 500)
+    private String sourceUrl;
+
+    /** Date de mise à jour de la fiche officielle au moment de l'import. */
+    @Column(name = "source_date_maj")
+    private LocalDate sourceDateMaj;
+
+    /**
+     * Date d'une version plus récente de la fiche, détectée par la
+     * vérification automatique et pas encore appliquée (null sinon).
+     */
+    @Column(name = "source_date_disponible")
+    private LocalDate sourceDateDisponible;
+
+    /** Vrai si la démarche est visible par les étudiants. */
+    @JsonIgnore
+    public boolean isPubliee() {
+        return statutPublication != StatutPublication.BROUILLON;
+    }
+
+    /** Vrai si une version plus récente de la fiche officielle est disponible. */
+    public boolean isMiseAJourDisponible() {
+        return sourceDateDisponible != null;
+    }
 
     /**
      * Catégorie de la démarche.

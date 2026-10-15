@@ -380,6 +380,12 @@ public class StudentDemarcheService {
                                                 + demarcheId
                                 ));
 
+        if (!demarche.isPubliee()) {
+            throw new IllegalArgumentException(
+                    "Cette démarche n'est pas encore disponible."
+            );
+        }
+
         StudentProfile studentProfile =
                 studentProfileRepository.findByUserEmail(email)
                         .orElseGet(() -> createEmptyProfile(user));
@@ -513,6 +519,12 @@ public class StudentDemarcheService {
                                         "Démarche introuvable avec l'id : "
                                                 + demarcheId
                                 ));
+
+        if (!demarche.isPubliee()) {
+            throw new IllegalArgumentException(
+                    "Cette démarche n'est pas encore publiée."
+            );
+        }
 
         User student = studentProfile.getUser();
 

@@ -12,6 +12,7 @@ import com.mystudentguide.entity.EtapeDemarche;
 import com.mystudentguide.entity.LienOfficiel;
 import com.mystudentguide.repository.CategorieRepository;
 import com.mystudentguide.repository.DemarcheRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,15 +105,23 @@ public class DemarcheService {
      * Cette méthode est utilisée notamment pour afficher
      * la liste générale des démarches dans l'application.
      *
-     * @return liste de toutes les démarches
+     * Les brouillons (fiches importées pas encore validées)
+     * ne sont renvoyés qu'aux administrateurs.
+     *
+     * @param inclureBrouillons vrai pour un administrateur
+     * @return liste des démarches
      */
-    public List<Demarche> getAllDemarches() {
+    public List<Demarche> getAllDemarches(boolean inclureBrouillons) {
 
         /*
          * findAll() est fourni automatiquement par
          * Spring Data JPA grâce à JpaRepository.
          */
-        return demarcheRepository.findAll();
+        List<Demarche> demarches = demarcheRepository.findAll();
+
+        return inclureBrouillons
+                ? demarches
+                : demarches.stream().filter(Demarche::isPubliee).toList();
     }
 
 
@@ -133,9 +142,10 @@ public class DemarcheService {
      */
     public Demarche getDemarcheById(Long id) {
 
+        // EntityNotFoundException → 404 (GlobalExceptionHandler) au lieu d'une 500.
         return demarcheRepository.findById(id)
                 .orElseThrow(
-                        () -> new RuntimeException(
+                        () -> new EntityNotFoundException(
                                 "Démarche introuvable avec l'id : " + id
                         )
                 );
@@ -215,17 +225,28 @@ public class DemarcheService {
      * - categorie.
      *
      * @param id identifiant de la démarche
+     * @param inclureBrouillons vrai pour un administrateur
      * @return détail complet de la démarche
      */
     @Transactional(readOnly = true)
     public DemarcheDetailDTO getDemarcheDetailById(
-            Long id
+            Long id,
+            boolean inclureBrouillons
     ) {
 
         /*
          * Récupération de la démarche principale.
          */
         Demarche demarche = getDemarcheById(id);
+
+        /*
+         * Un brouillon n'existe pas pour un étudiant ou un visiteur.
+         */
+        if (!inclureBrouillons && !demarche.isPubliee()) {
+            throw new EntityNotFoundException(
+                    "Démarche introuvable avec l'id : " + id
+            );
+        }
 
 
         // --------------------------------------------------------
@@ -303,6 +324,8 @@ public class DemarcheService {
                 .documentsRequis(documentsRequis)
                 .etapes(etapes)
                 .liensOfficiels(liensOfficiels)
+                .sourceUrl(demarche.getSourceUrl())
+                .sourceDateMaj(demarche.getSourceDateMaj())
                 .build();
     }
 

@@ -1,13 +1,16 @@
 package com.mystudentguide.controller;
 
 import com.mystudentguide.entity.Categorie;
+import com.mystudentguide.service.CategorieDefautService;
 import com.mystudentguide.service.CategorieService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -50,14 +53,40 @@ public class CategorieController {
     private final CategorieService categorieService;
 
     /**
+     * Création des catégories de base (thèmes de la page d'accueil).
+     */
+    private final CategorieDefautService categorieDefautService;
+
+    /**
      * Injection du service par constructeur.
      *
      * @param categorieService service de gestion des catégories
+     * @param categorieDefautService catégories de base
      */
     public CategorieController(
-            CategorieService categorieService
+            CategorieService categorieService,
+            CategorieDefautService categorieDefautService
     ) {
         this.categorieService = categorieService;
+        this.categorieDefautService = categorieDefautService;
+    }
+
+    /**
+     * Ajoute les catégories de base qui manquent (Séjour & visa, Santé,
+     * Logement, Études, Banque & budget, Emploi, Transports, Vie quotidienne).
+     *
+     * Endpoint :
+     *
+     * POST /api/categories/defaut
+     *
+     * Les catégories existantes ne sont pas modifiées.
+     *
+     * @return nombre de catégories créées
+     */
+    @PostMapping("/defaut")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Integer> ajouterCategoriesDeBase() {
+        return Map.of("creees", categorieDefautService.creerCategoriesManquantes());
     }
 
     /**

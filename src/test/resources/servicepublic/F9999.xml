@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Publication xmlns:dc="http://purl.org/dc/elements/1.1/" ID="F9999" type="Fiche d'information" dateDerniereModificationImportante="2026-08-01T00:00:00" spUrl="https://www.service-public.gouv.fr/particuliers/vosdroits/F9999">
+  <dc:title>Étudiant étranger : titre de séjour</dc:title>
+  <dc:description>Résumé de la fiche.</dc:description>
+  <dc:date>modified 2026-08-01</dc:date>
+  <Theme ID="N19804"><Titre>Étranger - Europe</Titre></Theme>
+  <Introduction><Texte><Paragraphe>Si vous êtes <LienIntra LienID="R1">étranger</LienIntra> et voulez étudier en France, vous devez demander un visa.</Paragraphe></Texte></Introduction>
+  <ListeSituations>
+    <Situation>
+      <Titre>1ʳᵉ année</Titre>
+      <Texte>
+        <Chapitre>
+          <Titre><Paragraphe>Comment valider le VLS-TS ?</Paragraphe></Titre>
+          <Paragraphe>Vous devez valider votre visa en ligne.</Paragraphe>
+          <Liste type="puce"><Item><Paragraphe>Payer la taxe</Paragraphe></Item><Item><Paragraphe>Garder l'attestation</Paragraphe></Item></Liste>
+          <ServiceEnLigne ID="R52684" URL="https://administration-etrangers-en-france.interieur.gouv.fr/particuliers/#/" type="Téléservice"><Titre>Valider un VLS-TS</Titre><Source ID="R30603">Ministère chargé de l'intérieur</Source></ServiceEnLigne>
+        </Chapitre>
+      </Texte>
+    </Situation>
+    <Situation>
+      <Titre>Après 1 an de séjour</Titre>
+      <Texte>
+        <Chapitre>
+          <Titre><Paragraphe>Comment valider le VLS-TS ?</Paragraphe></Titre>
+          <Paragraphe>Doublon : ne doit pas créer une deuxième étape.</Paragraphe>
+        </Chapitre>
+        <Chapitre>
+          <Titre><Paragraphe>Quelle démarche à la fin du VLS-TS ?</Paragraphe></Titre>
+          <Paragraphe>Demandez une carte de séjour.</Paragraphe>
+          <ServiceEnLigne ID="R52684" URL="https://administration-etrangers-en-france.interieur.gouv.fr/particuliers/#/" type="Téléservice"><Titre>Valider un VLS-TS</Titre><Source ID="R30603">Ministère chargé de l'intérieur</Source></ServiceEnLigne>
+        </Chapitre>
+      </Texte>
+    </Situation>
+  </ListeSituations>
+  <OuSAdresser ID="R2" type="Local personnalisé sur SP"><Titre>Préfecture</Titre><PivotLocal>prefecture</PivotLocal><RessourceWeb URL="https://lannuaire.service-public.gouv.fr/navigation/prefecture"/><Source ID="R30603">Ministère chargé de l'intérieur</Source></OuSAdresser>
+  <PourEnSavoirPlus type="Information pratique" ID="R50843" URL="https://www.campusfrance.org/fr/visas-et-cartes-de-sejour"><Titre>Visas et cartes de séjour pour étudiant</Titre><Source ID="R30841">Agence Campus France</Source></PourEnSavoirPlus>
+  <PourEnSavoirPlus type="Information pratique" ID="R0" URL="javascript:alert(1)"><Titre>Lien dangereux ignoré</Titre></PourEnSavoirPlus>
+</Publication>

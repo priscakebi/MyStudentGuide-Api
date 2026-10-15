@@ -1,5 +1,6 @@
 package com.mystudentguide.exception;
 
+import com.mystudentguide.servicepublic.ServicePublicIndisponibleException;
 import jakarta.persistence.EntityNotFoundException;
 
 import org.slf4j.Logger;
@@ -86,6 +87,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(body(HttpStatus.NOT_FOUND, ex.getMessage()));
+    }
+
+    /** Service-Public injoignable : 502, avec un message lisible pour l'admin. */
+    @ExceptionHandler(ServicePublicIndisponibleException.class)
+    public ResponseEntity<Map<String, Object>> handleServicePublic(ServicePublicIndisponibleException ex) {
+        log.warn("Service-Public indisponible : {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(body(HttpStatus.BAD_GATEWAY, ex.getMessage()));
     }
 
     /** Erreur levée volontairement avec un statut précis : on conserve ce statut. */
