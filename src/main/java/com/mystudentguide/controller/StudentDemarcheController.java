@@ -1,5 +1,6 @@
 package com.mystudentguide.controller;
 
+import com.mystudentguide.entity.Notification;
 import com.mystudentguide.entity.StudentDemarche;
 import com.mystudentguide.entity.StudentProfile;
 import com.mystudentguide.entity.User;
@@ -317,87 +318,99 @@ public class StudentDemarcheController {
 
     /**
      * ============================================================
-     * ATTRIBUER UNE DÉMARCHE À UN ÉTUDIANT
+     * MES DÉMARCHES COMMENCÉES
      * ============================================================
      *
      * Endpoint :
      *
-     * POST /api/student-demarches/assign
+     * GET /api/student-demarches/me
      *
-     * Exemple :
+     * Retourne uniquement les démarches que l'étudiant connecté
+     * a commencées (EN_COURS ou TERMINEE). Liste vide si l'étudiant
+     * n'a encore rien commencé ou n'a pas de profil.
      *
-     * POST /api/student-demarches/assign
-     * ?studentProfileId=1&demarcheId=5
-     *
-     * ADMIN :
-     * peut attribuer une démarche à n'importe quel étudiant.
-     *
-     * ETUDIANT :
-     * le studentProfileId fourni est ignoré.
-     * La démarche est automatiquement attribuée
-     * à l'étudiant connecté.
-     *
-     * Cela évite qu'un étudiant puisse écrire :
-     *
-     * studentProfileId=25
-     *
-     * pour ajouter une démarche dans le compte
-     * d'un autre étudiant.
-     *
-     * @param studentProfileId profil cible pour l'ADMIN
-     * @param demarcheId démarche à suivre
      * @param authentication utilisateur connecté
-     * @return StudentDemarche créée
+     * @return démarches commencées
      */
-    @PostMapping("/assign")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ETUDIANT')")
-    public ResponseEntity<StudentDemarche> assignDemarcheToStudent(
-            @RequestParam Long studentProfileId,
-            @RequestParam Long demarcheId,
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('ETUDIANT')")
+    public ResponseEntity<List<StudentDemarche>> getMyStartedDemarches(
             Authentication authentication) {
 
-        try {
+        return ResponseEntity.ok(
+                studentDemarcheService.getStartedDemarches(
+                        authentication.getName()
+                )
+        );
+    }
 
-            /*
-             * Par défaut, on utilise le profil envoyé
-             * dans la requête.
-             *
-             * Pour un étudiant, cette valeur sera remplacée
-             * par son propre profil.
-             */
-            Long targetStudentProfileId = studentProfileId;
 
-            /*
-             * Si c'est un étudiant, il ne peut attribuer
-             * une démarche qu'à lui-même.
-             */
-            if (isStudent(authentication)) {
+    /**
+     * ============================================================
+     * COMMENCER UNE DÉMARCHE
+     * ============================================================
+     *
+     * Endpoint :
+     *
+     * POST /api/student-demarches/start/{demarcheId}
+     *
+     * Réservé aux étudiants connectés. Le suivi est toujours
+     * créé pour l'étudiant connecté (jamais pour un autre),
+     * directement au statut EN_COURS.
+     *
+     * @param demarcheId démarche à commencer
+     * @param authentication utilisateur connecté
+     * @return suivi de la démarche
+     */
+    @PostMapping("/start/{demarcheId}")
+    @PreAuthorize("hasRole('ETUDIANT')")
+    public ResponseEntity<StudentDemarche> startDemarche(
+            @PathVariable Long demarcheId,
+            Authentication authentication) {
 
-                targetStudentProfileId =
-                        getCurrentStudentProfileId(authentication);
-            }
+        // IllegalArgumentException (démarche inconnue) → 400 via GlobalExceptionHandler.
+        return ResponseEntity.ok(
+                studentDemarcheService.startDemarche(
+                        authentication.getName(),
+                        demarcheId
+                )
+        );
+    }
 
-            /*
-             * Création de l'association StudentDemarche.
-             */
-            StudentDemarche studentDemarche =
-                    studentDemarcheService.assignDemarcheToStudent(
-                            targetStudentProfileId,
-                            demarcheId
-                    );
 
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(studentDemarche);
+    /**
+     * ============================================================
+     * SUGGÉRER UNE DÉMARCHE À UN ÉTUDIANT
+     * ============================================================
+     *
+     * Endpoint :
+     *
+     * POST /api/student-demarches/suggest
+     * ?studentProfileId=1&demarcheId=5
+     *
+     * Remplace l'ancienne attribution (/assign) : l'étudiant
+     * reçoit une notification de suggestion avec les boutons
+     * « Voir plus » et « Commencer ». Aucun suivi n'est créé.
+     *
+     * Réservé à l'ADMIN.
+     *
+     * @param studentProfileId profil de l'étudiant ciblé
+     * @param demarcheId démarche suggérée
+     * @return notification créée
+     */
+    @PostMapping("/suggest")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Notification> suggestDemarche(
+            @RequestParam Long studentProfileId,
+            @RequestParam Long demarcheId) {
 
-        } catch (RuntimeException exception) {
-
-            /*
-             * Pour le moment, on conserve ton comportement actuel
-             * en retournant HTTP 400 en cas d'erreur métier.
-             */
-            return ResponseEntity.badRequest().build();
-        }
+        // IllegalArgumentException (déjà commencée, déjà suggérée...) → 400.
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(studentDemarcheService.suggestDemarche(
+                        studentProfileId,
+                        demarcheId
+                ));
     }
 
 

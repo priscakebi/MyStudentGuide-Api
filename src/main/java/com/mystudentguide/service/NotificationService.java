@@ -183,6 +183,36 @@ public boolean existsNotification(
     }
 
     /**
+     * Vrai si une suggestion de cette démarche attend encore
+     * une réponse de l'utilisateur.
+     */
+    public boolean hasPendingSuggestion(Long userId, Long demarcheId) {
+        return !notificationRepository
+                .findPendingDemarcheActions(
+                        userId,
+                        demarcheId,
+                        Notification.ACTION_SUGGESTION_DEMARCHE)
+                .isEmpty();
+    }
+
+    /**
+     * Marque comme traitées (et lues) les suggestions de cette
+     * démarche : l'étudiant vient de la commencer.
+     */
+    public void closePendingSuggestions(Long userId, Long demarcheId) {
+        List<Notification> pending =
+                notificationRepository.findPendingDemarcheActions(
+                        userId,
+                        demarcheId,
+                        Notification.ACTION_SUGGESTION_DEMARCHE);
+        for (Notification notification : pending) {
+            notification.setActionTraitee(true);
+            notification.setLu(true);
+        }
+        notificationRepository.saveAll(pending);
+    }
+
+    /**
      * Marque une notification comme lue.
      *
      * Lorsqu'un étudiant consulte une notification,

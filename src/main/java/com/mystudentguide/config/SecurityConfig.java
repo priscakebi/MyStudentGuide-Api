@@ -250,6 +250,13 @@ public class SecurityConfig {
                                                                 "/api/demarches/**")
                                                 .permitAll()
 
+                                                // Documents requis d'une démarche : visibles
+                                                // par tous, inscrits ou non.
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/documents-requis/demarche/**")
+                                                .permitAll()
+
                                                 /*
                                                  * ============================================
                                                  * GESTION DES DÉMARCHES

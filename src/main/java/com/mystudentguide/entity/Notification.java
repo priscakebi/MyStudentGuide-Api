@@ -28,6 +28,9 @@ public class Notification {
     /** Action : demander à l'étudiant s'il a envoyé ses documents (rappel J+10). */
     public static final String ACTION_CONFIRMER_DOCUMENTS = "CONFIRMER_DOCUMENTS";
 
+    /** Action : suggestion d'une démarche (boutons « Voir plus » / « Commencer »). */
+    public static final String ACTION_SUGGESTION_DEMARCHE = "SUGGESTION_DEMARCHE";
+
     /**
      * Identifiant unique de la notification.
      *
@@ -111,9 +114,18 @@ public class Notification {
     private Long studentDemarcheId;
 
     /**
+     * Démarche générale concernée (facultatif).
+     *
+     * Utilisé par les suggestions : le front ouvre le détail
+     * (/demarches/{id}) ou commence la démarche depuis la notification.
+     */
+    @Column(name = "demarche_id")
+    private Long demarcheId;
+
+    /**
      * Action attendue de l'étudiant (facultatif).
      *
-     * Valeur utilisée : CONFIRMER_DOCUMENTS.
+     * Valeurs utilisées : CONFIRMER_DOCUMENTS, SUGGESTION_DEMARCHE.
      */
     @Column(name = "action_type", length = 40)
     private String action;

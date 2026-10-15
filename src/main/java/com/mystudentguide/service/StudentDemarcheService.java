@@ -63,8 +63,10 @@ import java.util.List;
  * Lorsqu'un étudiant modifie le statut d'une démarche,
  * une notification est envoyée aux administrateurs.
  *
- * Lorsqu'une démarche est attribuée à un étudiant,
- * une notification est envoyée à cet étudiant.
+ * Les démarches ne sont plus attribuées : un administrateur
+ * peut suggérer une démarche (notification à l'étudiant),
+ * et le suivi n'est créé que lorsque l'étudiant clique
+ * sur « Commencer ».
  */
 @Service
 public class StudentDemarcheService {
@@ -302,176 +304,263 @@ public class StudentDemarcheService {
 
 
     // ============================================================
-    // ATTRIBUER UNE DÉMARCHE À UN ÉTUDIANT
+    // DÉMARCHES COMMENCÉES PAR L'ÉTUDIANT CONNECTÉ
     // ============================================================
 
     /**
-     * Ajoute une démarche générale au suivi d'un étudiant.
+     * Retourne uniquement les démarches que l'étudiant
+     * a commencées (EN_COURS ou TERMINEE).
      *
-     * Lorsqu'une démarche est ajoutée :
+     * C'est la liste affichée dans « Mes démarches »
+     * du dashboard étudiant.
      *
-     * 1. Le profil étudiant est recherché.
-     * 2. La démarche générale est recherchée.
-     * 3. Le service vérifie que le couple étudiant/démarche
-     *    n'existe pas déjà.
-     * 4. Une StudentDemarche est créée.
-     * 5. Une notification est envoyée à l'étudiant.
+     * Un étudiant sans profil n'a encore rien commencé :
+     * la liste est alors vide.
      *
-     * IMPORTANT :
+     * @param email email de l'utilisateur connecté
+     * @return démarches commencées
+     */
+    @Transactional(readOnly = true)
+    public List<StudentDemarche> getStartedDemarches(String email) {
+
+        return studentProfileRepository.findByUserEmail(email)
+                .map(profile -> studentDemarcheRepository
+                        .findByStudentProfileId(profile.getId())
+                        .stream()
+                        .filter(sd -> sd.getStatut() == DemarcheStatus.EN_COURS
+                                || sd.getStatut() == DemarcheStatus.TERMINEE)
+                        .toList())
+                .orElse(List.of());
+    }
+
+
+    // ============================================================
+    // COMMENCER UNE DÉMARCHE (ÉTUDIANT)
+    // ============================================================
+
+    /**
+     * L'étudiant connecté commence une démarche.
      *
-     * Aucun StudentDocument n'est créé.
+     * Toutes les démarches sont visibles par tous : il n'y a plus
+     * d'attribution. Le suivi (StudentDemarche) n'est créé qu'au
+     * clic sur « Commencer », directement au statut EN_COURS.
      *
-     * Les documents requis restent associés à la démarche
-     * via DocumentRequis et sont simplement consultables
-     * par l'étudiant.
+     * - aucun suivi        : création EN_COURS (date de début = aujourd'hui) ;
+     * - suivi A_FAIRE ou
+     *   NON_CONCERNEE      : repasse EN_COURS ;
+     * - déjà commencé      : le suivi existant est renvoyé tel quel.
      *
-     * @param studentProfileId identifiant du profil étudiant
-     * @param demarcheId identifiant de la démarche
-     * @return StudentDemarche créée
+     * Si l'étudiant n'a pas encore de profil, un profil vide
+     * est créé : il pourra le compléter plus tard.
+     *
+     * Les suggestions encore ouvertes pour cette démarche
+     * sont closes.
+     *
+     * @param email email de l'utilisateur connecté
+     * @param demarcheId démarche à commencer
+     * @return suivi de la démarche
      */
     @Transactional
-    public StudentDemarche assignDemarcheToStudent(
-            Long studentProfileId,
+    public StudentDemarche startDemarche(
+            String email,
             Long demarcheId
     ) {
 
-        // --------------------------------------------------------
-        // 1. Vérifier que l'étudiant existe
-        // --------------------------------------------------------
-
-        StudentProfile studentProfile =
-                studentProfileRepository.findById(studentProfileId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Profil étudiant introuvable avec l'id : "
-                                                + studentProfileId
-                                )
-                        );
-
-
-        // --------------------------------------------------------
-        // 2. Vérifier que la démarche existe
-        // --------------------------------------------------------
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Utilisateur connecté introuvable"
+                        ));
 
         Demarche demarche =
                 demarcheRepository.findById(demarcheId)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new IllegalArgumentException(
                                         "Démarche introuvable avec l'id : "
                                                 + demarcheId
-                                )
-                        );
+                                ));
 
+        StudentProfile studentProfile =
+                studentProfileRepository.findByUserEmail(email)
+                        .orElseGet(() -> createEmptyProfile(user));
 
-        // --------------------------------------------------------
-        // 3. Vérifier que le couple étudiant/démarche
-        //    n'existe pas déjà
-        // --------------------------------------------------------
-
-        boolean alreadyExists =
-                studentDemarcheRepository
-                        .existsByStudentProfile_IdAndDemarche_Id(
-                                studentProfileId,
-                                demarcheId
-                        );
-
-        /*
-         * Cette vérification évite de créer un doublon.
-         *
-         * Une deuxième protection existe également :
-         * la contrainte UNIQUE présente dans StudentDemarche.
-         */
-        if (alreadyExists) {
-
-            throw new IllegalStateException(
-                    "Cette démarche est déjà suivie "
-                            + "par cet étudiant."
-            );
-        }
-
-
-        // --------------------------------------------------------
-        // 4. Créer le suivi étudiant/démarche
-        // --------------------------------------------------------
-
-        StudentDemarche studentDemarche =
-                new StudentDemarche();
-
-        /*
-         * Association avec le profil étudiant.
-         */
-        studentDemarche.setStudentProfile(studentProfile);
-
-        /*
-         * Association avec la démarche générale.
-         */
-        studentDemarche.setDemarche(demarche);
-
-        /*
-         * Une nouvelle démarche commence avec le statut A_FAIRE.
-         */
-        studentDemarche.setStatut(DemarcheStatus.A_FAIRE);
-
-        /*
-         * Enregistre la date d'attribution.
-         */
-        studentDemarche.setDateAttribution(
-                LocalDate.now()
+        notificationService.closePendingSuggestions(
+                user.getId(),
+                demarcheId
         );
 
+        // --------------------------------------------------------
+        // Suivi déjà existant
+        // --------------------------------------------------------
+
+        StudentDemarche existing =
+                studentDemarcheRepository
+                        .findByStudentProfileIdAndDemarcheId(
+                                studentProfile.getId(),
+                                demarcheId
+                        )
+                        .orElse(null);
+
+        if (existing != null) {
+
+            if (existing.getStatut() == DemarcheStatus.A_FAIRE
+                    || existing.getStatut() == DemarcheStatus.NON_CONCERNEE) {
+
+                return updateStatus(existing.getId(), DemarcheStatus.EN_COURS);
+            }
+
+            return existing;
+        }
 
         // --------------------------------------------------------
-        // 5. Sauvegarder le suivi
+        // Nouveau suivi, directement EN_COURS
         // --------------------------------------------------------
+
+        StudentDemarche studentDemarche = new StudentDemarche();
+        studentDemarche.setStudentProfile(studentProfile);
+        studentDemarche.setDemarche(demarche);
+        studentDemarche.setStatut(DemarcheStatus.EN_COURS);
+        studentDemarche.setDateAttribution(LocalDate.now());
+
+        /*
+         * La date de début sert de point de départ
+         * au rappel de J+10 sur l'envoi des documents.
+         */
+        studentDemarche.setDateDebut(LocalDate.now());
 
         StudentDemarche savedStudentDemarche =
                 studentDemarcheRepository.save(studentDemarche);
 
-
         // --------------------------------------------------------
-        // 6. NOTIFICATION DE L'ÉTUDIANT
+        // Notification des administrateurs
         // --------------------------------------------------------
 
-        /*
-         * Récupère le compte utilisateur associé
-         * au profil étudiant.
-         */
-        User student = studentProfile.getUser();
+        for (User admin : userRepository.findByRole(RoleType.ADMIN)) {
 
-        /*
-         * Vérifie qu'un compte utilisateur est bien associé
-         * au profil avant de créer la notification.
-         */
-        if (student != null) {
-
-            Notification notification =
+            notificationService.saveNotification(
                     Notification.builder()
-                            .titre("Nouvelle démarche attribuée")
+                            .titre("Démarche commencée")
                             .message(
-                                    "Une nouvelle démarche vous a été "
-                                            + "attribuée : \""
+                                    "L'étudiant "
+                                            + user.getPrenom()
+                                            + " "
+                                            + user.getNom()
+                                            + " a commencé la démarche \""
                                             + demarche.getTitre()
                                             + "\"."
                             )
                             .type(NotificationType.DEMARCHE)
                             .lu(false)
-                            .user(student)
-                            .build();
-
-            /*
-             * Enregistre la notification.
-             */
-            notificationService.saveNotification(
-                    notification
+                            .user(admin)
+                            .build()
             );
         }
 
-
-        // --------------------------------------------------------
-        // 7. Retourner le suivi créé
-        // --------------------------------------------------------
-
         return savedStudentDemarche;
+    }
+
+
+    /**
+     * Crée un profil étudiant vide pour un utilisateur
+     * qui commence une démarche avant d'avoir rempli son profil.
+     */
+    private StudentProfile createEmptyProfile(User user) {
+
+        StudentProfile profile = new StudentProfile();
+        profile.setUser(user);
+        user.setStudentProfile(profile);
+
+        return studentProfileRepository.save(profile);
+    }
+
+
+    // ============================================================
+    // SUGGÉRER UNE DÉMARCHE (ADMIN)
+    // ============================================================
+
+    /**
+     * Envoie à un étudiant une notification de suggestion
+     * pour une démarche.
+     *
+     * Remplace l'ancienne « attribution » : aucun suivi n'est
+     * créé. L'étudiant reçoit une notification avec les boutons
+     * « Voir plus » et « Commencer ».
+     *
+     * @param studentProfileId profil de l'étudiant ciblé
+     * @param demarcheId démarche suggérée
+     * @return notification créée
+     * @throws IllegalArgumentException si la démarche est déjà
+     *         commencée ou déjà suggérée sans réponse
+     */
+    @Transactional
+    public Notification suggestDemarche(
+            Long studentProfileId,
+            Long demarcheId
+    ) {
+
+        StudentProfile studentProfile =
+                studentProfileRepository.findById(studentProfileId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Profil étudiant introuvable avec l'id : "
+                                                + studentProfileId
+                                ));
+
+        Demarche demarche =
+                demarcheRepository.findById(demarcheId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Démarche introuvable avec l'id : "
+                                                + demarcheId
+                                ));
+
+        User student = studentProfile.getUser();
+
+        if (student == null) {
+            throw new IllegalArgumentException(
+                    "Aucun compte n'est associé à ce profil."
+            );
+        }
+
+        boolean alreadyStarted =
+                studentDemarcheRepository
+                        .findByStudentProfileIdAndDemarcheId(
+                                studentProfileId,
+                                demarcheId
+                        )
+                        .map(sd -> sd.getStatut() == DemarcheStatus.EN_COURS
+                                || sd.getStatut() == DemarcheStatus.TERMINEE)
+                        .orElse(false);
+
+        if (alreadyStarted) {
+            throw new IllegalArgumentException(
+                    "L'étudiant a déjà commencé cette démarche."
+            );
+        }
+
+        if (notificationService.hasPendingSuggestion(student.getId(), demarcheId)) {
+            throw new IllegalArgumentException(
+                    "Cette démarche a déjà été suggérée à l'étudiant."
+            );
+        }
+
+        return notificationService.saveNotification(
+                Notification.builder()
+                        .titre("Démarche suggérée pour vous")
+                        .message(
+                                "D'après votre profil, la démarche \""
+                                        + demarche.getTitre()
+                                        + "\" pourrait vous concerner. "
+                                        + "Consultez-la ou commencez-la dès maintenant."
+                        )
+                        .type(NotificationType.DEMARCHE)
+                        .lu(false)
+                        .user(student)
+                        .demarcheId(demarcheId)
+                        .action(Notification.ACTION_SUGGESTION_DEMARCHE)
+                        .actionTraitee(false)
+                        .build()
+        );
     }
 
 

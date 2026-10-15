@@ -118,4 +118,24 @@ public interface NotificationRepository
             @Param("studentDemarcheId") Long studentDemarcheId,
             @Param("action") String action
     );
+
+    /**
+     * Suggestions encore ouvertes d'une démarche pour un utilisateur.
+     *
+     * Sert à clore la suggestion quand l'étudiant commence
+     * la démarche, et à éviter les suggestions en double.
+     */
+    @Query("""
+        SELECT n
+        FROM Notification n
+        WHERE n.user.id = :userId
+        AND n.demarcheId = :demarcheId
+        AND n.action = :action
+        AND (n.actionTraitee IS NULL OR n.actionTraitee = false)
+    """)
+    List<Notification> findPendingDemarcheActions(
+            @Param("userId") Long userId,
+            @Param("demarcheId") Long demarcheId,
+            @Param("action") String action
+    );
 }

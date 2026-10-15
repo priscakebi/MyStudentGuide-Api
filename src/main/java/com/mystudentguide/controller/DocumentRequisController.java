@@ -100,8 +100,8 @@ public class DocumentRequisController {
      * Endpoint :
      * GET /api/documents-requis/demarche/{demarcheId}
      *
-     * Cette route est accessible aux administrateurs
-     * et aux étudiants.
+     * Cette route est publique (voir SecurityConfig) :
+     * les visiteurs non inscrits consultent aussi les démarches.
      *
      * C'est cette route qui permet notamment à l'étudiant
      * de consulter les documents nécessaires à une démarche.
@@ -120,7 +120,6 @@ public class DocumentRequisController {
      * @return liste des documents requis de la démarche
      */
     @GetMapping("/demarche/{demarcheId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ETUDIANT')")
     public ResponseEntity<List<DocumentRequis>> getDocumentsByDemarche(
             @PathVariable Long demarcheId
     ) {

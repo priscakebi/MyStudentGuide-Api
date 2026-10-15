@@ -27,10 +27,10 @@ import java.util.List;
  * Une tâche planifiée est exécutée automatiquement toutes
  * les heures, ainsi qu'au démarrage de l'API.
  *
- * Elle recherche les démarches qui sont :
- *
- * - A_FAIRE
- * - EN_COURS
+ * Elle recherche les démarches EN_COURS, c'est-à-dire
+ * celles que l'étudiant a commencées. Les anciens suivis
+ * A_FAIRE (ancienne attribution) ne sont plus relancés :
+ * l'étudiant ne les voit plus dans son espace.
  *
  * Pour chaque démarche, le service vérifie deux types
  * de rappels :
@@ -98,20 +98,13 @@ public class RappelDemarcheService {
     public void envoyerRappelsAutomatiques() {
 
         // --------------------------------------------------------
-        // 1. Récupérer les démarches A_FAIRE
-        //    et EN_COURS
+        // 1. Récupérer les démarches commencées (EN_COURS)
         // --------------------------------------------------------
 
         List<StudentDemarche> demarches =
                 studentDemarcheRepository.findByStatut(
-                        DemarcheStatus.A_FAIRE
-                );
-
-        demarches.addAll(
-                studentDemarcheRepository.findByStatut(
                         DemarcheStatus.EN_COURS
-                )
-        );
+                );
 
 
         // Date du jour.
