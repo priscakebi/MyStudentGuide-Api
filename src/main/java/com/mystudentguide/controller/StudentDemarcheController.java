@@ -6,6 +6,7 @@ import com.mystudentguide.entity.StudentProfile;
 import com.mystudentguide.entity.User;
 import com.mystudentguide.enums.DemarcheStatus;
 import com.mystudentguide.repository.UserRepository;
+import com.mystudentguide.service.ChecklistDocumentsService;
 import com.mystudentguide.service.StudentDemarcheService;
 
 import org.springframework.http.HttpStatus;
@@ -91,6 +92,11 @@ public class StudentDemarcheController {
      */
     private final UserRepository userRepository;
 
+    /**
+     * Checklist personnelle des documents (documents « prêts »).
+     */
+    private final ChecklistDocumentsService checklistDocumentsService;
+
 
     /**
      * ============================================================
@@ -101,13 +107,16 @@ public class StudentDemarcheController {
      *
      * @param studentDemarcheService service de gestion des démarches
      * @param userRepository repository des utilisateurs
+     * @param checklistDocumentsService checklist des documents
      */
     public StudentDemarcheController(
             StudentDemarcheService studentDemarcheService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ChecklistDocumentsService checklistDocumentsService) {
 
         this.studentDemarcheService = studentDemarcheService;
         this.userRepository = userRepository;
+        this.checklistDocumentsService = checklistDocumentsService;
     }
 
 
@@ -507,6 +516,42 @@ public class StudentDemarcheController {
         // IllegalArgumentException → 400 via GlobalExceptionHandler.
         return ResponseEntity.ok(
                 studentDemarcheService.confirmerEnvoiDocuments(id, envoyes)
+        );
+    }
+
+
+    /**
+     * Checklist : coche ou décoche un document requis comme « prêt ».
+     *
+     * PUT /api/student-demarches/{id}/documents-prets/{documentId}?pret=true|false
+     *
+     * Réservé à l'étudiant propriétaire du suivi.
+     * 404 si le document n'appartient pas à la démarche suivie.
+     */
+    @PutMapping("/{id}/documents-prets/{documentId}")
+    @PreAuthorize("hasRole('ETUDIANT')")
+    public ResponseEntity<StudentDemarche> marquerDocumentPret(
+            @PathVariable Long id,
+            @PathVariable Long documentId,
+            @RequestParam boolean pret,
+            Authentication authentication) {
+
+        StudentDemarche studentDemarche;
+
+        try {
+            studentDemarche =
+                    studentDemarcheService.getStudentDemarcheById(id);
+        } catch (RuntimeException exception) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!belongsToCurrentStudent(studentDemarche, authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // EntityNotFoundException → 404 via GlobalExceptionHandler.
+        return ResponseEntity.ok(
+                checklistDocumentsService.marquer(studentDemarche, documentId, pret)
         );
     }
 

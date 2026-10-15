@@ -6,6 +6,8 @@ import com.mystudentguide.enums.DemarcheStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Entité représentant le suivi d'une démarche pour un étudiant.
@@ -139,6 +141,18 @@ public class StudentDemarche {
     @Column(name = "avis_donne")
     private Boolean avisDonne;
 
+    /**
+     * Documents requis que l'étudiant a cochés comme prêts
+     * (identifiants de DocumentRequis) : sa checklist personnelle.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "student_demarche_documents_prets",
+        joinColumns = @JoinColumn(name = "student_demarche_id")
+    )
+    @Column(name = "document_requis_id", nullable = false)
+    private Set<Long> documentsPrets = new HashSet<>();
+
     public StudentDemarche() {
     }
 
@@ -266,6 +280,14 @@ public class StudentDemarche {
 
     public void setAvisDonne(Boolean avisDonne) {
         this.avisDonne = avisDonne;
+    }
+
+    public Set<Long> getDocumentsPrets() {
+        return documentsPrets;
+    }
+
+    public void setDocumentsPrets(Set<Long> documentsPrets) {
+        this.documentsPrets = documentsPrets;
     }
 
     /**
