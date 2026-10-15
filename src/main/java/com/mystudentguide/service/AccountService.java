@@ -1,5 +1,6 @@
 package com.mystudentguide.service;
 
+import com.mystudentguide.validation.FormRules;
 import com.mystudentguide.dto.account.DeleteAccountRequest;
 import com.mystudentguide.entity.Notification;
 import com.mystudentguide.entity.User;
@@ -379,11 +380,8 @@ public class AccountService {
             );
         }
 
-        if (!isStrongPassword(newPassword)) {
-            throw new IllegalArgumentException(
-                    "Le nouveau mot de passe doit contenir au minimum 8 caractères, "
-                    + "une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)."
-            );
+        if (!FormRules.isStrongPassword(newPassword)) {
+            throw new IllegalArgumentException(FormRules.PASSWORD_MESSAGE);
         }
 
         User user = getCurrentUser();
@@ -407,16 +405,6 @@ public class AccountService {
                 user.getEmail(),
                 user.getPrenom()
         );
-    }
-
-    private static boolean isStrongPassword(String password) {
-        return password != null
-                && password.length() >= 8
-                && password.length() <= 72
-                && password.matches(".*[a-z].*")
-                && password.matches(".*[A-Z].*")
-                && password.matches(".*\\d.*")
-                && password.matches(".*[@$!%*?&].*");
     }
 
     private User getCurrentUser() {

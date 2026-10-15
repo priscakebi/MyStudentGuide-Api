@@ -1,7 +1,10 @@
 package com.mystudentguide.dto.auth;
 
+import com.mystudentguide.validation.FormRules;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -19,32 +22,31 @@ public class RegisterRequest {
      */
     @NotBlank(message = "L'adresse email est obligatoire")
     @Email(message = "L'adresse email doit être valide")
+    @Pattern(regexp = FormRules.EMAIL_REGEX, message = "L'adresse email doit être valide (ex. : nom@domaine.fr)")
+    @Size(max = FormRules.EMAIL_MAX, message = "L'adresse email est trop longue")
     private String email;
 
     /**
      * Mot de passe choisi par l'utilisateur.
      *
-     * On impose une longueur minimale pour des raisons
-     * de sécurité.
+     * Politique CNIL / ANSSI : voir FormRules.
      */
     @NotBlank(message = "Le mot de passe est obligatoire")
-    @Size(
-        min = 8,
-        max = 72,
-        message = "Le mot de passe doit contenir entre 8 et 72 caractères"
-    )
+    @Pattern(regexp = FormRules.PASSWORD_REGEX, message = FormRules.PASSWORD_MESSAGE)
     private String password;
 
     /**
      * Prénom de l'utilisateur.
      */
     @NotBlank(message = "Le prénom est obligatoire")
+    @Pattern(regexp = FormRules.NAME_REGEX, message = "Le prénom " + FormRules.NAME_MESSAGE)
     private String prenom;
 
     /**
      * Nom de famille de l'utilisateur.
      */
     @NotBlank(message = "Le nom est obligatoire")
+    @Pattern(regexp = FormRules.NAME_REGEX, message = "Le nom " + FormRules.NAME_MESSAGE)
     private String nom;
 
     /**
