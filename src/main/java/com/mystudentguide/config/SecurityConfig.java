@@ -263,7 +263,16 @@ public class SecurityConfig {
                                                  * ============================================
                                                  *
                                                  * Seul un ADMIN peut gérer les démarches.
+                                                 *
+                                                 * Exception : un étudiant peut signaler une
+                                                 * erreur sur une démarche (règle placée AVANT
+                                                 * la règle ADMIN, la première qui correspond gagne).
                                                  */
+
+                                                .requestMatchers(
+                                                                HttpMethod.POST,
+                                                                "/api/demarches/*/signalements")
+                                                .hasRole("ETUDIANT")
 
                                                 .requestMatchers(
                                                                 HttpMethod.POST,

@@ -46,7 +46,10 @@ public record AdminStatsResponse(
         List<InscriptionsSemaine> inscriptionsParSemaine,
 
         /** Dernières notifications reçues par l'administrateur connecté. */
-        List<Activite> activiteRecente
+        List<Activite> activiteRecente,
+
+        /** Signalements d'erreurs envoyés par les étudiants, pas encore traités. */
+        long signalementsOuverts
 ) {
 
     public record TopDemarche(Long id, String titre, long commencees, long terminees) {

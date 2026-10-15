@@ -242,6 +242,19 @@ public class Demarche {
     private List<LienOfficiel> liensOfficiels = new ArrayList<>();
 
     /**
+     * Signalements d'erreurs envoyés par les étudiants
+     * (supprimés avec la démarche).
+     */
+    @OneToMany(
+        mappedBy = "demarche",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    @Builder.Default
+    @JsonIgnore
+    private List<SignalementDemarche> signalements = new ArrayList<>();
+
+    /**
      * Méthode exécutée automatiquement par JPA
      * juste avant la première insertion en base.
      *

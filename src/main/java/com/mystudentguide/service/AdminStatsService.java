@@ -10,10 +10,12 @@ import com.mystudentguide.entity.StudentDemarche;
 import com.mystudentguide.entity.User;
 import com.mystudentguide.enums.DemarcheStatus;
 import com.mystudentguide.enums.RoleType;
+import com.mystudentguide.enums.StatutSignalement;
 import com.mystudentguide.repository.AvisRepository;
 import com.mystudentguide.repository.CategorieRepository;
 import com.mystudentguide.repository.DemarcheRepository;
 import com.mystudentguide.repository.NotificationRepository;
+import com.mystudentguide.repository.SignalementDemarcheRepository;
 import com.mystudentguide.repository.StudentDemarcheRepository;
 import com.mystudentguide.repository.UserRepository;
 
@@ -51,6 +53,7 @@ public class AdminStatsService {
     private final StudentDemarcheRepository studentDemarcheRepository;
     private final AvisRepository avisRepository;
     private final NotificationRepository notificationRepository;
+    private final SignalementDemarcheRepository signalementRepository;
 
     public AdminStatsService(
             UserRepository userRepository,
@@ -58,7 +61,8 @@ public class AdminStatsService {
             CategorieRepository categorieRepository,
             StudentDemarcheRepository studentDemarcheRepository,
             AvisRepository avisRepository,
-            NotificationRepository notificationRepository
+            NotificationRepository notificationRepository,
+            SignalementDemarcheRepository signalementRepository
     ) {
         this.userRepository = userRepository;
         this.demarcheRepository = demarcheRepository;
@@ -66,6 +70,7 @@ public class AdminStatsService {
         this.studentDemarcheRepository = studentDemarcheRepository;
         this.avisRepository = avisRepository;
         this.notificationRepository = notificationRepository;
+        this.signalementRepository = signalementRepository;
     }
 
     @Transactional(readOnly = true)
@@ -197,7 +202,8 @@ public class AdminStatsService {
                 noteMoyenne,
                 top,
                 parSemaine,
-                activite
+                activite,
+                signalementRepository.countByStatut(StatutSignalement.OUVERT)
         );
     }
 }
