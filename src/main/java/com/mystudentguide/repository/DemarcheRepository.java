@@ -41,4 +41,7 @@ public interface DemarcheRepository extends JpaRepository<Demarche, Long> {
 
     /** Vrai si la fiche Service-Public a déjà été importée. */
     boolean existsBySourceId(String sourceId);
+
+    /** Démarches dont la suggestion automatique est activée. */
+    List<Demarche> findByCibleActiveTrue();
 }

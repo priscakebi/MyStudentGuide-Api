@@ -73,7 +73,7 @@ public class ServicePublicController {
     }
 
     @PatchMapping("/demarches/{id}/publication")
-    public Demarche publication(@PathVariable Long id, @RequestParam StatutPublication statut) {
+    public ServicePublicImportService.ResultatPublication publication(@PathVariable Long id, @RequestParam StatutPublication statut) {
         return importService.changerPublication(id, statut);
     }
 }

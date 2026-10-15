@@ -18,6 +18,7 @@ public class StudentProfileService {
     private final StudentProfileRepository studentProfileRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final SuggestionAutoService suggestionAutoService;
 
     /**
      * Constructeur du service.
@@ -25,15 +26,18 @@ public class StudentProfileService {
      * @param studentProfileRepository permet de gérer les profils étudiants
      * @param userRepository permet de récupérer les utilisateurs
      * @param notificationService permet de créer les notifications
+     * @param suggestionAutoService suggestions de démarches d'après le profil
      */
     public StudentProfileService(
             StudentProfileRepository studentProfileRepository,
             UserRepository userRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            SuggestionAutoService suggestionAutoService) {
 
         this.studentProfileRepository = studentProfileRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.suggestionAutoService = suggestionAutoService;
     }
 
     /**
@@ -184,6 +188,10 @@ public class StudentProfileService {
             // Enregistrement de la notification.
             notificationService.saveNotification(notification);
         }
+
+        // Démarches qui correspondent au profil : suggestions automatiques
+        // (jamais deux fois la même, voir SuggestionAutoService).
+        suggestionAutoService.suggererPourProfil(savedProfile);
 
         // Retourne le profil sauvegardé.
         return savedProfile;

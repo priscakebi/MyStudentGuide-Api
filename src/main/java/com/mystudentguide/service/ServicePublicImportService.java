@@ -52,6 +52,7 @@ public class ServicePublicImportService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final CategorieDefautService categorieDefautService;
+    private final SuggestionAutoService suggestionAutoService;
 
     public ServicePublicImportService(
             ServicePublicClient client,
@@ -59,7 +60,8 @@ public class ServicePublicImportService {
             CategorieRepository categorieRepository,
             UserRepository userRepository,
             NotificationService notificationService,
-            CategorieDefautService categorieDefautService
+            CategorieDefautService categorieDefautService,
+            SuggestionAutoService suggestionAutoService
     ) {
         this.client = client;
         this.demarcheRepository = demarcheRepository;
@@ -67,6 +69,7 @@ public class ServicePublicImportService {
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.categorieDefautService = categorieDefautService;
+        this.suggestionAutoService = suggestionAutoService;
     }
 
 
@@ -150,6 +153,12 @@ public class ServicePublicImportService {
         demarche.setStatutPublication(StatutPublication.BROUILLON);
         demarche.setSourceId(fiche.id());
 
+        // Ciblage par défaut des fiches du catalogue (suggestions automatiques
+        // une fois publiée ; modifiable par l'admin).
+        CatalogueEtudiant.trouver(fiche.id())
+                .map(CatalogueEtudiant.FicheSuggeree::ciblage)
+                .ifPresent(ciblage -> ciblage.appliquerA(demarche));
+
         appliquerContenu(demarche, fiche);
 
         return demarcheRepository.save(demarche);
@@ -160,11 +169,28 @@ public class ServicePublicImportService {
     // PUBLICATION
     // ============================================================
 
+    /**
+     * @param demarche            démarche mise à jour
+     * @param suggestionsEnvoyees étudiants qui viennent de recevoir la suggestion
+     */
+    public record ResultatPublication(Demarche demarche, int suggestionsEnvoyees) {
+    }
+
+    /**
+     * Publie ou repasse en brouillon. À la publication, la démarche est
+     * suggérée aux étudiants dont le profil correspond à son ciblage.
+     */
     @Transactional
-    public Demarche changerPublication(Long demarcheId, StatutPublication statut) {
+    public ResultatPublication changerPublication(Long demarcheId, StatutPublication statut) {
         Demarche demarche = getDemarche(demarcheId);
         demarche.setStatutPublication(statut);
-        return demarcheRepository.save(demarche);
+        Demarche sauvee = demarcheRepository.save(demarche);
+
+        int envoyees = statut == StatutPublication.PUBLIEE
+                ? suggestionAutoService.suggererPourDemarche(sauvee)
+                : 0;
+
+        return new ResultatPublication(sauvee, envoyees);
     }
 
 

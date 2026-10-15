@@ -8,6 +8,7 @@ import com.mystudentguide.enums.NotificationType;
 import com.mystudentguide.enums.RoleType;
 import com.mystudentguide.repository.AvisRepository;
 import com.mystudentguide.repository.SignalementDemarcheRepository;
+import com.mystudentguide.repository.SuggestionEnvoyeeRepository;
 import com.mystudentguide.repository.NotificationRepository;
 import com.mystudentguide.repository.UserRepository;
 
@@ -66,6 +67,7 @@ public class AccountService {
     private final EmailService emailService;
     private final AvisRepository avisRepository;
     private final SignalementDemarcheRepository signalementRepository;
+    private final SuggestionEnvoyeeRepository suggestionEnvoyeeRepository;
 
     /**
      * Constructeur du service.
@@ -81,7 +83,8 @@ public class AccountService {
             PasswordEncoder passwordEncoder,
             EmailService emailService,
             AvisRepository avisRepository,
-            SignalementDemarcheRepository signalementRepository
+            SignalementDemarcheRepository signalementRepository,
+            SuggestionEnvoyeeRepository suggestionEnvoyeeRepository
     ) {
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
@@ -89,6 +92,7 @@ public class AccountService {
         this.emailService = emailService;
         this.avisRepository = avisRepository;
         this.signalementRepository = signalementRepository;
+        this.suggestionEnvoyeeRepository = suggestionEnvoyeeRepository;
     }
 
     /**
@@ -324,6 +328,9 @@ public class AccountService {
 
         // Ses signalements de démarches aussi (données personnelles).
         signalementRepository.deleteByUserId(user.getId());
+
+        // Et l'historique de ses suggestions automatiques.
+        suggestionEnvoyeeRepository.deleteByUserId(user.getId());
 
         notificationRepository.deleteByUserId(user.getId());
 

@@ -39,6 +39,7 @@ class ServicePublicImportServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private NotificationService notificationService;
     @Mock private CategorieDefautService categorieDefautService;
+    @Mock private SuggestionAutoService suggestionAutoService;
 
     @InjectMocks private ServicePublicImportService service;
 

@@ -3,12 +3,16 @@ package com.mystudentguide.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import com.mystudentguide.enums.LogementType;
 import com.mystudentguide.enums.StatutPublication;
+import com.mystudentguide.enums.VisaType;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Entité représentant une démarche administrative générale
@@ -119,6 +123,48 @@ public class Demarche {
      */
     @Column(name = "source_date_disponible")
     private LocalDate sourceDateDisponible;
+
+    // ============================================================
+    // CIBLAGE : SUGGESTION AUTOMATIQUE D'APRÈS LE PROFIL
+    // ============================================================
+    //
+    // Quand le ciblage est actif, la démarche est suggérée
+    // automatiquement (notification) aux étudiants dont le profil
+    // remplit TOUS les critères renseignés. Un critère vide
+    // (null ou liste vide) ne filtre pas.
+
+    /** Suggestion automatique activée (null = non). */
+    @Column(name = "cible_active")
+    private Boolean cibleActive;
+
+    /** true : seulement les étudiants hors UE / EEE / Suisse. */
+    @Column(name = "cible_hors_ue")
+    private Boolean cibleHorsUE;
+
+    /** true : première arrivée en France ; false : déjà installés. */
+    @Column(name = "cible_premiere_arrivee")
+    private Boolean ciblePremiereArrivee;
+
+    /** Types de visa visés (vide = tous). */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "demarche_cible_visas", joinColumns = @JoinColumn(name = "demarche_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_visa", length = 40)
+    @Builder.Default
+    private Set<VisaType> cibleVisas = new HashSet<>();
+
+    /** Types de logement visés (vide = tous). */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "demarche_cible_logements", joinColumns = @JoinColumn(name = "demarche_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_logement", length = 40)
+    @Builder.Default
+    private Set<LogementType> cibleLogements = new HashSet<>();
+
+    /** Vrai si la suggestion automatique est activée. */
+    public boolean isCiblageActif() {
+        return Boolean.TRUE.equals(cibleActive);
+    }
 
     /** Vrai si la démarche est visible par les étudiants. */
     @JsonIgnore

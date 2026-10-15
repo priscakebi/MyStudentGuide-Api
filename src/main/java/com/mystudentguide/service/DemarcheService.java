@@ -12,6 +12,7 @@ import com.mystudentguide.entity.EtapeDemarche;
 import com.mystudentguide.entity.LienOfficiel;
 import com.mystudentguide.repository.CategorieRepository;
 import com.mystudentguide.repository.DemarcheRepository;
+import com.mystudentguide.repository.SuggestionEnvoyeeRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,6 +78,9 @@ public class DemarcheService {
      */
     private final CategorieRepository categorieRepository;
 
+    /** Historique des suggestions automatiques (nettoyé à la suppression). */
+    private final SuggestionEnvoyeeRepository suggestionEnvoyeeRepository;
+
 
     /**
      * Constructeur du service.
@@ -88,10 +92,12 @@ public class DemarcheService {
      */
     public DemarcheService(
             DemarcheRepository demarcheRepository,
-            CategorieRepository categorieRepository
+            CategorieRepository categorieRepository,
+            SuggestionEnvoyeeRepository suggestionEnvoyeeRepository
     ) {
         this.demarcheRepository = demarcheRepository;
         this.categorieRepository = categorieRepository;
+        this.suggestionEnvoyeeRepository = suggestionEnvoyeeRepository;
     }
 
 
@@ -511,6 +517,9 @@ public class DemarcheService {
         /*
          * Suppression de la démarche.
          */
+        // Historique des suggestions automatiques de cette démarche.
+        suggestionEnvoyeeRepository.deleteByDemarcheId(id);
+
         demarcheRepository.delete(demarche);
     }
 
