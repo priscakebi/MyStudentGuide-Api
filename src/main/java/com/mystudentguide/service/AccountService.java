@@ -7,6 +7,7 @@ import com.mystudentguide.entity.User;
 import com.mystudentguide.enums.NotificationType;
 import com.mystudentguide.enums.RoleType;
 import com.mystudentguide.repository.AvisRepository;
+import com.mystudentguide.repository.DemandeAideRepository;
 import com.mystudentguide.repository.SignalementDemarcheRepository;
 import com.mystudentguide.repository.SuggestionEnvoyeeRepository;
 import com.mystudentguide.repository.NotificationRepository;
@@ -68,6 +69,7 @@ public class AccountService {
     private final AvisRepository avisRepository;
     private final SignalementDemarcheRepository signalementRepository;
     private final SuggestionEnvoyeeRepository suggestionEnvoyeeRepository;
+    private final DemandeAideRepository demandeAideRepository;
 
     /**
      * Constructeur du service.
@@ -84,7 +86,8 @@ public class AccountService {
             EmailService emailService,
             AvisRepository avisRepository,
             SignalementDemarcheRepository signalementRepository,
-            SuggestionEnvoyeeRepository suggestionEnvoyeeRepository
+            SuggestionEnvoyeeRepository suggestionEnvoyeeRepository,
+            DemandeAideRepository demandeAideRepository
     ) {
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
@@ -93,6 +96,7 @@ public class AccountService {
         this.avisRepository = avisRepository;
         this.signalementRepository = signalementRepository;
         this.suggestionEnvoyeeRepository = suggestionEnvoyeeRepository;
+        this.demandeAideRepository = demandeAideRepository;
     }
 
     /**
@@ -328,6 +332,9 @@ public class AccountService {
 
         // Ses signalements de démarches aussi (données personnelles).
         signalementRepository.deleteByUserId(user.getId());
+
+        // Ses demandes d'aide également.
+        demandeAideRepository.deleteByUserId(user.getId());
 
         // Et l'historique de ses suggestions automatiques.
         suggestionEnvoyeeRepository.deleteByUserId(user.getId());

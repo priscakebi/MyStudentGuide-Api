@@ -49,7 +49,10 @@ public record AdminStatsResponse(
         List<Activite> activiteRecente,
 
         /** Signalements d'erreurs envoyés par les étudiants, pas encore traités. */
-        long signalementsOuverts
+        long signalementsOuverts,
+
+        /** Demandes d'aide des étudiants en attente de réponse. */
+        long demandesAideOuvertes
 ) {
 
     public record TopDemarche(Long id, String titre, long commencees, long terminees) {

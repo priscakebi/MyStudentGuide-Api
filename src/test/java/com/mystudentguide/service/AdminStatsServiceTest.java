@@ -12,6 +12,7 @@ import com.mystudentguide.repository.AvisRepository;
 import com.mystudentguide.repository.CategorieRepository;
 import com.mystudentguide.repository.DemarcheRepository;
 import com.mystudentguide.repository.NotificationRepository;
+import com.mystudentguide.repository.DemandeAideRepository;
 import com.mystudentguide.repository.SignalementDemarcheRepository;
 import com.mystudentguide.repository.StudentDemarcheRepository;
 import com.mystudentguide.repository.UserRepository;
@@ -40,6 +41,7 @@ class AdminStatsServiceTest {
     @Mock private AvisRepository avisRepository;
     @Mock private NotificationRepository notificationRepository;
     @Mock private SignalementDemarcheRepository signalementRepository;
+    @Mock private DemandeAideRepository demandeAideRepository;
 
     @InjectMocks private AdminStatsService service;
 
