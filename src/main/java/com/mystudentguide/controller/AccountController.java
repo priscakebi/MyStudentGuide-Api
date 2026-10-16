@@ -4,10 +4,15 @@ import com.mystudentguide.dto.account.ChangePasswordRequest;
 import com.mystudentguide.dto.account.DeleteAccountRequest;
 import jakarta.validation.Valid;
 import com.mystudentguide.service.AccountService;
+import com.mystudentguide.service.DonneesPersonnellesService;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * Contrôleur responsable des opérations liées au compte
@@ -28,13 +33,21 @@ public class AccountController {
      */
     private final AccountService accountService;
 
+    /** Export des données personnelles (RGPD). */
+    private final DonneesPersonnellesService donneesPersonnellesService;
+
     /**
      * Constructeur du contrôleur.
      *
      * @param accountService service de gestion du compte
+     * @param donneesPersonnellesService export des données personnelles
      */
-    public AccountController(AccountService accountService) {
+    public AccountController(
+            AccountService accountService,
+            DonneesPersonnellesService donneesPersonnellesService
+    ) {
         this.accountService = accountService;
+        this.donneesPersonnellesService = donneesPersonnellesService;
     }
 
     /**
@@ -167,6 +180,20 @@ public class AccountController {
                     new AccountResponse(false, e.getMessage())
             );
         }
+    }
+
+    /**
+     * GET /api/account/export
+     *
+     * Télécharge toutes les données personnelles de l'utilisateur connecté
+     * au format JSON (RGPD : droit d'accès et droit à la portabilité).
+     */
+    @GetMapping("/export")
+    public ResponseEntity<Map<String, Object>> exporterMesDonnees(Authentication authentication) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"mes-donnees-mystudentguide.json\"")
+                .body(donneesPersonnellesService.exporter(authentication.getName()));
     }
 
     /**

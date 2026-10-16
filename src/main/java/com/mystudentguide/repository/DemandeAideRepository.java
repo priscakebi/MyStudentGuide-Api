@@ -32,8 +32,16 @@ public interface DemandeAideRepository extends JpaRepository<DemandeAide, Long> 
     /** Suppression du compte : les demandes de l'étudiant sont effacées. */
     void deleteByUserId(Long userId);
 
-    /** Conservation limitée : purge des demandes traitées trop anciennes. */
+    /**
+     * Conservation limitée : purge des demandes traitées depuis trop longtemps.
+     * La durée court à partir de la réponse de l'équipe (ou de l'envoi si la
+     * demande a été fermée sans réponse), comme l'annonce la page d'aide.
+     */
     @Modifying
-    @Query("DELETE FROM DemandeAide d WHERE d.statut <> :ouverte AND d.dateCreation < :limite")
+    @Query("""
+        DELETE FROM DemandeAide d
+        WHERE d.statut <> :ouverte
+          AND COALESCE(d.dateReponse, d.dateCreation) < :limite
+    """)
     int purgerAnciennes(@Param("ouverte") StatutDemandeAide ouverte, @Param("limite") LocalDateTime limite);
 }

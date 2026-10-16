@@ -32,7 +32,7 @@ import java.util.List;
  * - Les administrateurs sont prévenus par notification.
  * - La réponse de l'administrateur est envoyée à l'étudiant par
  *   notification et reste visible sur sa page.
- * - Les demandes traitées sont effacées après CONSERVATION_MOIS mois.
+ * - Les demandes traitées sont effacées CONSERVATION_MOIS mois après leur traitement.
  */
 @Service
 public class DemandeAideService {
@@ -193,7 +193,7 @@ public class DemandeAideService {
         return demandeAideRepository.countByStatut(StatutDemandeAide.OUVERTE);
     }
 
-    /** Chaque nuit : efface les demandes traitées de plus de CONSERVATION_MOIS mois. */
+    /** Chaque nuit : efface les demandes traitées depuis plus de CONSERVATION_MOIS mois. */
     @Scheduled(cron = "0 45 3 * * *")
     @Transactional
     public void purgerAnciennes() {

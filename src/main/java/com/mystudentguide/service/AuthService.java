@@ -10,6 +10,7 @@ import com.mystudentguide.enums.RoleType;
 import com.mystudentguide.repository.UserRepository;
 import com.mystudentguide.security.JwtService;
 import com.mystudentguide.security.LoginAttemptService;
+import com.mystudentguide.validation.ConditionsUtilisation;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -156,6 +158,11 @@ public class AuthService {
         // Tous les nouveaux comptes créés depuis l'inscription
         // sont automatiquement des étudiants.
         user.setRole(RoleType.ETUDIANT);
+
+        // Preuve du consentement (RGPD) : version des conditions acceptées et date.
+        // La case est obligatoire (RegisterRequest.accepteConditions, validé par @Valid).
+        user.setConditionsVersion(ConditionsUtilisation.VERSION);
+        user.setConditionsAccepteesLe(LocalDateTime.now());
 
         // Sauvegarde du nouvel utilisateur en base de données.
         User savedUser = userRepository.save(user);

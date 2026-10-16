@@ -28,4 +28,7 @@ public interface SignalementDemarcheRepository extends JpaRepository<Signalement
 
     /** Suppression du compte : les signalements de l'étudiant sont effacés. */
     void deleteByUserId(Long userId);
+
+    /** Signalements envoyés par un étudiant (export de ses données, RGPD). */
+    List<SignalementDemarche> findByUserIdOrderByDateCreationDesc(Long userId);
 }

@@ -16,4 +16,7 @@ public interface AvisRepository extends JpaRepository<Avis, Long> {
     List<Avis> findAllByOrderByDateCreationDesc();
 
     void deleteByUserId(Long userId);
+
+    /** Avis laissés par un étudiant (export de ses données, RGPD). */
+    List<Avis> findByUserIdOrderByDateCreationDesc(Long userId);
 }

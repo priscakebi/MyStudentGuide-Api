@@ -1,9 +1,12 @@
 package com.mystudentguide.dto.auth;
 
+import com.mystudentguide.validation.ConditionsUtilisation;
 import com.mystudentguide.validation.FormRules;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -50,6 +53,16 @@ public class RegisterRequest {
     private String nom;
 
     /**
+     * Case « J'accepte les conditions d'utilisation et la politique
+     * de confidentialité », obligatoirement cochée (RGPD).
+     *
+     * @NotNull car @AssertTrue considère une valeur absente comme valide.
+     */
+    @NotNull(message = ConditionsUtilisation.MESSAGE_REFUS)
+    @AssertTrue(message = ConditionsUtilisation.MESSAGE_REFUS)
+    private Boolean accepteConditions;
+
+    /**
      * Constructeur vide nécessaire notamment
      * pour la désérialisation JSON par Spring.
      */
@@ -88,5 +101,13 @@ public class RegisterRequest {
 
     public void setNom(String nom) {
         this.nom = nom;
+    }
+
+    public Boolean getAccepteConditions() {
+        return accepteConditions;
+    }
+
+    public void setAccepteConditions(Boolean accepteConditions) {
+        this.accepteConditions = accepteConditions;
     }
 }

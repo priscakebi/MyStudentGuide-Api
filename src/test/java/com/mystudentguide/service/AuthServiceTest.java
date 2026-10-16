@@ -9,6 +9,7 @@ import com.mystudentguide.repository.UserRepository;
 import com.mystudentguide.security.CompteTemporairementBloqueException;
 import com.mystudentguide.security.JwtService;
 import com.mystudentguide.security.LoginAttemptService;
+import com.mystudentguide.validation.ConditionsUtilisation;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +66,7 @@ class AuthServiceTest {
         request.setPassword("MotDePasse123");
         request.setPrenom("Prisca");
         request.setNom("Kouenin");
+        request.setAccepteConditions(true);
         return request;
     }
 
@@ -95,6 +97,10 @@ class AuthServiceTest {
         assertThat(saved.getValue().getEmail()).isEqualTo("prisca@email.com");
         assertThat(saved.getValue().getPassword()).isEqualTo("HASH");
         assertThat(saved.getValue().getRole()).isEqualTo(RoleType.ETUDIANT);
+
+        // Preuve du consentement (RGPD).
+        assertThat(saved.getValue().getConditionsVersion()).isEqualTo(ConditionsUtilisation.VERSION);
+        assertThat(saved.getValue().getConditionsAccepteesLe()).isNotNull();
 
         assertThat(response.getToken()).isEqualTo("jwt-token");
         assertThat(response.getRole()).isEqualTo("ETUDIANT");

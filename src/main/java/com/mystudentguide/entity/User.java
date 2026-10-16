@@ -123,6 +123,20 @@ public class User implements UserDetails {
     private LocalDateTime updatedAt;
 
     /**
+     * Version des conditions d'utilisation et de la politique de
+     * confidentialité acceptées à l'inscription (ex. « 2026-10 »).
+     * Vide pour les comptes créés avant l'ajout du consentement
+     * et pour les administrateurs.
+     */
+    @Column(length = 20)
+    private String conditionsVersion;
+
+    /**
+     * Date à laquelle l'étudiant a accepté ces conditions (preuve du consentement, RGPD).
+     */
+    private LocalDateTime conditionsAccepteesLe;
+
+    /**
      * Relation OneToOne avec StudentProfile.
      *
      * Un utilisateur possède un seul profil.
