@@ -178,11 +178,16 @@ public class Demarche {
     @Column(name = "cible_premiere_arrivee")
     private Boolean ciblePremiereArrivee;
 
+    // nullable = false sur les collections : Hibernate donne alors à la table
+    // une clé primaire (demarche_id, valeur). Sans elle, les bases MySQL qui
+    // l'exigent (sql_require_primary_key, ex. Aiven) refusent de créer la
+    // table, et toute lecture d'une démarche échoue ensuite.
+
     /** Types de visa visés (vide = tous). */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "demarche_cible_visas", joinColumns = @JoinColumn(name = "demarche_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "type_visa", length = 40)
+    @Column(name = "type_visa", length = 40, nullable = false)
     @Builder.Default
     private Set<VisaType> cibleVisas = new HashSet<>();
 
@@ -190,7 +195,7 @@ public class Demarche {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "demarche_cible_logements", joinColumns = @JoinColumn(name = "demarche_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "type_logement", length = 40)
+    @Column(name = "type_logement", length = 40, nullable = false)
     @Builder.Default
     private Set<LogementType> cibleLogements = new HashSet<>();
 
