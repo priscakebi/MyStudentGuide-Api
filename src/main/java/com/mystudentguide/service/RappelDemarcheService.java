@@ -5,6 +5,7 @@ import com.mystudentguide.entity.StudentDemarche;
 import com.mystudentguide.enums.DemarcheStatus;
 import com.mystudentguide.enums.NotificationType;
 import com.mystudentguide.repository.StudentDemarcheRepository;
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -55,6 +56,12 @@ public class RappelDemarcheService {
      */
     private final NotificationService notificationService;
 
+    /** E-mail doublant les rappels d'échéance (7 et 3 jours avant la date limite). */
+    private final EmailService emailService;
+
+    /** Adresse du site, pour le lien vers la démarche dans l'e-mail. */
+    private final String frontendUrl;
+
 
     /**
      * Constructeur du service.
@@ -64,10 +71,29 @@ public class RappelDemarcheService {
      */
     public RappelDemarcheService(
             StudentDemarcheRepository studentDemarcheRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            EmailService emailService,
+            @Value("${app.frontend-url:http://localhost:4200}") String frontendUrl
     ) {
         this.studentDemarcheRepository = studentDemarcheRepository;
         this.notificationService = notificationService;
+        this.emailService = emailService;
+        this.frontendUrl = frontendUrl.endsWith("/")
+                ? frontendUrl.substring(0, frontendUrl.length() - 1)
+                : frontendUrl;
+    }
+
+    /**
+     * Double le rappel d'échéance par un e-mail : l'étudiant est prévenu
+     * même s'il n'ouvre pas l'application. Appelé une seule fois par rappel
+     * (le contrôle existsNotification évite les doublons).
+     */
+    private void envoyerEmailEcheance(StudentDemarche studentDemarche, String titreDemarche,
+                                      long joursRestants, LocalDate dateLimite) {
+        var user = studentDemarche.getStudentProfile().getUser();
+        String lien = frontendUrl + "/demarches/" + studentDemarche.getDemarche().getId();
+        emailService.envoyerRappelEcheance(
+                user.getEmail(), user.getPrenom(), titreDemarche, joursRestants, dateLimite, lien);
     }
 
 
@@ -322,6 +348,8 @@ public class RappelDemarcheService {
                     notificationService.saveNotification(
                             notification
                     );
+
+                    envoyerEmailEcheance(studentDemarche, titreDemarche, 7, dateLimite);
                 }
             }
 
@@ -391,6 +419,8 @@ if (joursRestants == 3) {
                         .build();
 
         notificationService.saveNotification(notification);
+
+        envoyerEmailEcheance(studentDemarche, titreDemarche, 3, dateLimite);
     }
 }
         }

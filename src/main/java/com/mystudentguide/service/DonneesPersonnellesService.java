@@ -108,6 +108,7 @@ public class DonneesPersonnellesService {
         m.put("derniereModification", user.getUpdatedAt());
         m.put("conditionsAccepteesVersion", user.getConditionsVersion());
         m.put("conditionsAccepteesLe", user.getConditionsAccepteesLe());
+        m.put("derniereConnexion", user.getDerniereConnexion());
         return m;
     }
 

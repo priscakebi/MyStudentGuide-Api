@@ -502,6 +502,94 @@ public class EmailService {
     }
 
     /**
+     * Rappel d'échéance : la date limite d'une démarche en cours approche
+     * (7 puis 3 jours avant, en plus de la notification dans l'application).
+     *
+     * @param email adresse de l'étudiant
+     * @param prenom prénom de l'étudiant
+     * @param titreDemarche titre de la démarche
+     * @param joursRestants nombre de jours avant la date limite
+     * @param dateLimite date limite de la démarche
+     * @param lienDemarche page de la démarche sur le site
+     */
+    @Async
+    public void envoyerRappelEcheance(
+            String email,
+            String prenom,
+            String titreDemarche,
+            long joursRestants,
+            java.time.LocalDate dateLimite,
+            String lienDemarche
+    ) {
+        String sujet = "Plus que " + joursRestants + " jours : " + titreDemarche;
+
+        String contenu =
+                "Bonjour " + prenom + ",\n\n"
+                + "La date limite de votre démarche « " + titreDemarche + " » approche : "
+                + "plus que " + joursRestants + " jours (le "
+                + dateLimite.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ").\n\n"
+                + "Retrouvez les étapes, les documents à préparer et les liens officiels ici :\n\n"
+                + lienDemarche + "\n\n"
+                + "Pensez à vérifier la date auprès du site officiel de la démarche.\n\n"
+                + "L'équipe MyStudentGuide";
+
+        envoyerEmail(email, sujet, contenu);
+    }
+
+    /**
+     * Prévient l'étudiant que son compte, inactif depuis longtemps, va être
+     * supprimé (RGPD : durée de conservation limitée, InactiviteService).
+     * Il lui suffit de se connecter pour le conserver.
+     *
+     * @param email adresse de l'étudiant
+     * @param prenom prénom de l'étudiant
+     * @param dateSuppression date prévue de la suppression (ex. « 15/11/2026 »)
+     * @param lienConnexion page de connexion du site
+     */
+    @Async
+    public void envoyerAvertissementInactivite(
+            String email,
+            String prenom,
+            String dateSuppression,
+            String lienConnexion
+    ) {
+        String sujet = "Votre compte MyStudentGuide va être supprimé";
+
+        String contenu =
+                "Bonjour " + prenom + ",\n\n"
+                + "Vous ne vous êtes pas connecté(e) à MyStudentGuide depuis longtemps. "
+                + "Pour protéger vos données, les comptes inactifs sont supprimés automatiquement.\n\n"
+                + "Votre compte et toutes les informations associées seront supprimés le "
+                + dateSuppression + ".\n\n"
+                + "Pour conserver votre compte, il vous suffit de vous connecter avant cette date :\n\n"
+                + lienConnexion + "\n\n"
+                + "Si vous n'en avez plus besoin, vous n'avez rien à faire.\n\n"
+                + "L'équipe MyStudentGuide";
+
+        envoyerEmail(email, sujet, contenu);
+    }
+
+    /**
+     * Informe l'étudiant que son compte inactif a été supprimé.
+     *
+     * @param email adresse de l'ancien compte
+     * @param prenom prénom de l'étudiant
+     */
+    @Async
+    public void envoyerSuppressionInactivite(String email, String prenom) {
+        String sujet = "Votre compte MyStudentGuide a été supprimé";
+
+        String contenu =
+                "Bonjour " + prenom + ",\n\n"
+                + "Comme annoncé, votre compte MyStudentGuide, inactif depuis longtemps, "
+                + "a été supprimé ainsi que toutes les informations associées.\n\n"
+                + "Vous pouvez créer un nouveau compte à tout moment si vous en avez besoin.\n\n"
+                + "L'équipe MyStudentGuide";
+
+        envoyerEmail(email, sujet, contenu);
+    }
+
+    /**
      * Informe l'étudiant que son compte vient d'être supprimé.
      *
      * Cet email est envoyé après le traitement réussi

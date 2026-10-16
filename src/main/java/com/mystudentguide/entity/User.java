@@ -137,6 +137,19 @@ public class User implements UserDetails {
     private LocalDateTime conditionsAccepteesLe;
 
     /**
+     * Dernière connexion réussie (inscription comprise). Sert à supprimer
+     * les comptes inactifs (RGPD, InactiviteService). Vide pour les comptes
+     * créés avant ce suivi : la date de création sert alors de référence.
+     */
+    private LocalDateTime derniereConnexion;
+
+    /**
+     * Date d'envoi de l'e-mail prévenant que le compte inactif va être supprimé.
+     * Remise à vide à chaque connexion.
+     */
+    private LocalDateTime avertissementInactiviteLe;
+
+    /**
      * Relation OneToOne avec StudentProfile.
      *
      * Un utilisateur possède un seul profil.

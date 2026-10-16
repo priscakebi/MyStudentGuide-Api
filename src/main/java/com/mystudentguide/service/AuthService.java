@@ -164,6 +164,9 @@ public class AuthService {
         user.setConditionsVersion(ConditionsUtilisation.VERSION);
         user.setConditionsAccepteesLe(LocalDateTime.now());
 
+        // Point de départ du délai d'inactivité (InactiviteService).
+        user.setDerniereConnexion(LocalDateTime.now());
+
         // Sauvegarde du nouvel utilisateur en base de données.
         User savedUser = userRepository.save(user);
 
@@ -270,6 +273,12 @@ public class AuthService {
                     "Utilisateur introuvable"
                 )
             );
+
+        // Compte actif : on repart de zéro pour la suppression des comptes inactifs
+        // (et un éventuel avertissement de suppression est annulé).
+        user.setDerniereConnexion(LocalDateTime.now());
+        user.setAvertissementInactiviteLe(null);
+        userRepository.save(user);
 
         // Génère le JWT après authentification réussie.
         String token = jwtService.generateToken(user);

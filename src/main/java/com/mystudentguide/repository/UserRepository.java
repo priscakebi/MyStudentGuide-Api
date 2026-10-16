@@ -3,7 +3,10 @@ package com.mystudentguide.repository;
 import com.mystudentguide.entity.User;
 import com.mystudentguide.enums.RoleType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,4 +81,33 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return liste des utilisateurs possédant ce rôle
      */
     List<User> findByRole(RoleType role);
+
+    /**
+     * Comptes inactifs à prévenir : dernière connexion (ou création, pour les
+     * comptes antérieurs à ce suivi) avant {@code limite}, pas encore avertis.
+     */
+    @Query("""
+        SELECT u FROM User u
+        WHERE u.role = :role
+          AND COALESCE(u.derniereConnexion, u.createdAt) < :limite
+          AND u.avertissementInactiviteLe IS NULL
+    """)
+    List<User> findInactifsAAvertir(@Param("role") RoleType role, @Param("limite") LocalDateTime limite);
+
+    /**
+     * Comptes inactifs à supprimer : inactifs avant {@code limiteInactivite}
+     * ET prévenus avant {@code limiteAvertissement} (le préavis est toujours respecté).
+     */
+    @Query("""
+        SELECT u FROM User u
+        WHERE u.role = :role
+          AND COALESCE(u.derniereConnexion, u.createdAt) < :limiteInactivite
+          AND u.avertissementInactiviteLe IS NOT NULL
+          AND u.avertissementInactiviteLe < :limiteAvertissement
+    """)
+    List<User> findInactifsASupprimer(
+            @Param("role") RoleType role,
+            @Param("limiteInactivite") LocalDateTime limiteInactivite,
+            @Param("limiteAvertissement") LocalDateTime limiteAvertissement
+    );
 }

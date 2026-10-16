@@ -327,19 +327,7 @@ public class AccountService {
          * La méthode deleteByUserId() devra être ajoutée
          * dans NotificationRepository.
          */
-        // Les avis publics de l'étudiant sont supprimés avec son compte.
-        avisRepository.deleteByUserId(user.getId());
-
-        // Ses signalements de démarches aussi (données personnelles).
-        signalementRepository.deleteByUserId(user.getId());
-
-        // Ses demandes d'aide également.
-        demandeAideRepository.deleteByUserId(user.getId());
-
-        // Et l'historique de ses suggestions automatiques.
-        suggestionEnvoyeeRepository.deleteByUserId(user.getId());
-
-        notificationRepository.deleteByUserId(user.getId());
+        // Suppression de toutes les données de l'étudiant puis du compte (voir effacerCompte).
 
         // ==========================================================
         // 9. SUPPRESSION DU COMPTE
@@ -359,7 +347,7 @@ public class AccountService {
          * La suppression du User entraînera donc la suppression
          * des données personnelles associées.
          */
-        userRepository.delete(user);
+        effacerCompte(user);
 
         // ==========================================================
         // 10. EMAIL DE CONFIRMATION À L'ÉTUDIANT
@@ -375,6 +363,26 @@ public class AccountService {
                 userEmail,
                 userPrenom
         );
+    }
+
+    /**
+     * Efface définitivement un compte et toutes les données qui s'y rattachent :
+     * avis, signalements, demandes d'aide, suggestions, notifications, puis le
+     * compte lui-même (le profil, les suivis et les jetons de réinitialisation
+     * suivent par cascade).
+     *
+     * Utilisé par la suppression demandée par l'étudiant et par la suppression
+     * automatique des comptes inactifs (InactiviteService) : les deux effacent
+     * exactement les mêmes données.
+     */
+    @Transactional
+    public void effacerCompte(User user) {
+        avisRepository.deleteByUserId(user.getId());
+        signalementRepository.deleteByUserId(user.getId());
+        demandeAideRepository.deleteByUserId(user.getId());
+        suggestionEnvoyeeRepository.deleteByUserId(user.getId());
+        notificationRepository.deleteByUserId(user.getId());
+        userRepository.delete(user);
     }
 
     // ============================================================
