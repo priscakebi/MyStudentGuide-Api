@@ -69,6 +69,17 @@ public class LienOfficiel {
     private String description;
 
     /**
+     * Version anglaise (facultative) du nom et de la description,
+     * affichée aux étudiants qui utilisent l'interface en anglais.
+     * Vide : le texte français est affiché.
+     */
+    @Column(name = "nom_en", length = 150)
+    private String nomEn;
+
+    @Column(name = "description_en", columnDefinition = "TEXT")
+    private String descriptionEn;
+
+    /**
      * Démarche à laquelle ce lien officiel est associé.
      *
      * Plusieurs liens peuvent être associés à une même démarche.
@@ -203,5 +214,21 @@ public class LienOfficiel {
      */
     public void setDemarche(Demarche demarche) {
         this.demarche = demarche;
+    }
+
+    public String getNomEn() {
+        return nomEn;
+    }
+
+    public void setNomEn(String nomEn) {
+        this.nomEn = nomEn;
+    }
+
+    public String getDescriptionEn() {
+        return descriptionEn;
+    }
+
+    public void setDescriptionEn(String descriptionEn) {
+        this.descriptionEn = descriptionEn;
     }
 }

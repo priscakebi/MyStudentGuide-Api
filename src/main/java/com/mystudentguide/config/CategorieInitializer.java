@@ -39,5 +39,11 @@ public class CategorieInitializer implements CommandLineRunner {
             int creees = categorieDefautService.creerCategoriesManquantes();
             log.info("{} catégories de base créées.", creees);
         }
+
+        // Version anglaise des catégories de base créées avant la traduction.
+        int traduites = categorieDefautService.completerTraductions();
+        if (traduites > 0) {
+            log.info("{} catégories de base traduites en anglais.", traduites);
+        }
     }
 }

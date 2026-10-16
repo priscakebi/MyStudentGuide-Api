@@ -67,6 +67,17 @@ public class EtapeDemarche {
     private String description;
 
     /**
+     * Version anglaise (facultative) du titre et de la description,
+     * affichée aux étudiants qui utilisent l'interface en anglais.
+     * Vide : le texte français est affiché.
+     */
+    @Column(name = "titre_en", length = 150)
+    private String titreEn;
+
+    @Column(name = "description_en", columnDefinition = "TEXT")
+    private String descriptionEn;
+
+    /**
      * Démarche à laquelle cette étape appartient.
      *
      * Plusieurs étapes peuvent être associées à une même démarche.
@@ -202,5 +213,21 @@ public class EtapeDemarche {
      */
     public void setDemarche(Demarche demarche) {
         this.demarche = demarche;
+    }
+
+    public String getTitreEn() {
+        return titreEn;
+    }
+
+    public void setTitreEn(String titreEn) {
+        this.titreEn = titreEn;
+    }
+
+    public String getDescriptionEn() {
+        return descriptionEn;
+    }
+
+    public void setDescriptionEn(String descriptionEn) {
+        this.descriptionEn = descriptionEn;
     }
 }

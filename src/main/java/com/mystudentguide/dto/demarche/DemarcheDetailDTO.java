@@ -54,6 +54,11 @@ public class DemarcheDetailDTO {
      */
     private String description;
 
+    /** Versions anglaises (null si non traduites). */
+    private String titreEn;
+    private String descriptionEn;
+    private String categorieEn;
+
     /**
      * Date de création de la démarche dans MyStudentGuide.
      */

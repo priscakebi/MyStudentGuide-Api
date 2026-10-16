@@ -320,6 +320,13 @@ public class DemarcheService {
                 .id(demarche.getId())
                 .titre(demarche.getTitre())
                 .description(demarche.getDescription())
+                .titreEn(demarche.getTitreEn())
+                .descriptionEn(demarche.getDescriptionEn())
+                .categorieEn(
+                        demarche.getCategorie() != null
+                                ? demarche.getCategorie().getNomEn()
+                                : null
+                )
                 .dateCreation(demarche.getDateCreation())
                 .dateLimite(demarche.getDateLimite())
                 .categorie(
@@ -547,6 +554,8 @@ public class DemarcheService {
                 .id(document.getId())
                 .nom(document.getNom())
                 .description(document.getDescription())
+                .nomEn(document.getNomEn())
+                .descriptionEn(document.getDescriptionEn())
                 .type(document.getType())
                 .build();
     }
@@ -571,6 +580,8 @@ public class DemarcheService {
                 .numero(etape.getNumero())
                 .titre(etape.getTitre())
                 .description(etape.getDescription())
+                .titreEn(etape.getTitreEn())
+                .descriptionEn(etape.getDescriptionEn())
                 .build();
     }
 
@@ -594,6 +605,8 @@ public class DemarcheService {
                 .nom(lien.getNom())
                 .url(lien.getUrl())
                 .description(lien.getDescription())
+                .nomEn(lien.getNomEn())
+                .descriptionEn(lien.getDescriptionEn())
                 .build();
     }
 }

@@ -55,4 +55,6 @@ public class LienOfficielDTO {
      * de ce lien pour l'étudiant.
      */
     private String description;
+    private String nomEn;
+    private String descriptionEn;
 }

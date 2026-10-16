@@ -57,4 +57,6 @@ public class EtapeDemarcheDTO {
      * pendant cette étape.
      */
     private String description;
+    private String titreEn;
+    private String descriptionEn;
 }

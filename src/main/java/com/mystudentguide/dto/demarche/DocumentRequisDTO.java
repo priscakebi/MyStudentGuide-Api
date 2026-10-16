@@ -52,6 +52,8 @@ public class DocumentRequisDTO {
      * pour ce document.
      */
     private String description;
+    private String nomEn;
+    private String descriptionEn;
 
     /**
      * Type du document.

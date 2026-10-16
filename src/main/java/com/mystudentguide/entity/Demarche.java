@@ -76,6 +76,17 @@ public class Demarche {
     private String description;
 
     /**
+     * Version anglaise (facultative) du titre et de la description,
+     * affichée aux étudiants qui utilisent l'interface en anglais.
+     * Vide : le texte français est affiché.
+     */
+    @Column(name = "titre_en", length = 150)
+    private String titreEn;
+
+    @Column(name = "description_en", columnDefinition = "TEXT")
+    private String descriptionEn;
+
+    /**
      * Date à laquelle la démarche a été créée
      * dans MyStudentGuide.
      *

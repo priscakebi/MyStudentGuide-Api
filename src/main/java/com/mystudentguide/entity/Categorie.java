@@ -70,6 +70,17 @@ public class Categorie {
     private String description;
 
     /**
+     * Version anglaise (facultative) du nom et de la description,
+     * affichée aux étudiants qui utilisent l'interface en anglais.
+     * Vide : le texte français est affiché.
+     */
+    @Column(name = "nom_en", length = 100)
+    private String nomEn;
+
+    @Column(name = "description_en", columnDefinition = "TEXT")
+    private String descriptionEn;
+
+    /**
      * Icône associée à la catégorie.
      *
      * Nous stockons uniquement une référence à l'icône

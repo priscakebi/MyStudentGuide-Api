@@ -282,11 +282,15 @@ public class ServicePublicImportService {
 
         demarche.getLiensOfficiels().clear();
         if (fiche.url() != null && !fiche.url().isBlank()) {
-            demarche.getLiensOfficiels().add(new LienOfficiel(
+            LienOfficiel source = new LienOfficiel(
                     "Fiche officielle Service-Public",
                     fiche.url(),
                     "Source : Service-Public.gouv.fr (DILA)",
-                    demarche));
+                    demarche);
+            // Lien identique sur toutes les fiches : sa version anglaise est connue.
+            source.setNomEn("Official Service-Public page (in French)");
+            source.setDescriptionEn("Source: Service-Public.gouv.fr (DILA)");
+            demarche.getLiensOfficiels().add(source);
         }
         for (FicheServicePublic.Lien lien : fiche.liens()) {
             demarche.getLiensOfficiels().add(

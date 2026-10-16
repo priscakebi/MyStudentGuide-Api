@@ -39,6 +39,8 @@ public class CategorieDefautService {
                 Categorie categorie = new Categorie();
                 categorie.setNom(theme.nom());
                 categorie.setDescription(theme.description());
+                categorie.setNomEn(theme.nomEn());
+                categorie.setDescriptionEn(theme.descriptionEn());
                 categorie.setIcone(theme.icone());
                 categorieRepository.save(categorie);
                 creees++;
@@ -46,6 +48,34 @@ public class CategorieDefautService {
         }
 
         return creees;
+    }
+
+    /**
+     * Ajoute la version anglaise aux catégories de base qui n'en ont pas
+     * encore (créées avant la traduction du contenu). Une traduction
+     * saisie par l'admin n'est jamais remplacée.
+     *
+     * @return nombre de catégories complétées
+     */
+    @Transactional
+    public int completerTraductions() {
+        int completees = 0;
+
+        for (Categorie categorie : categorieRepository.findAll()) {
+            if (categorie.getNomEn() != null && !categorie.getNomEn().isBlank()) {
+                continue;
+            }
+            Optional<Theme> theme = ThemesEtudiant.THEMES.stream()
+                    .filter(t -> t.nom().equalsIgnoreCase(categorie.getNom()))
+                    .findFirst();
+            if (theme.isPresent()) {
+                categorie.setNomEn(theme.get().nomEn());
+                categorie.setDescriptionEn(theme.get().descriptionEn());
+                completees++;
+            }
+        }
+
+        return completees;
     }
 
     /**

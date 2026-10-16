@@ -76,4 +76,19 @@ class CategorieDefautServiceTest {
     void aucuneSuggestionSiRienNeCorrespond() {
         assertThat(service.suggerer(null, "Justice")).isEmpty();
     }
+
+    @Test
+    void traduitLesCategoriesDeBaseSansToucherAuxTraductionsDeLAdmin() {
+        Categorie sante = categorie(1, "Santé");
+        Categorie logement = categorie(2, "Logement");
+        logement.setNomEn("Accommodation");
+        Categorie perso = categorie(3, "Titre de séjour");
+        when(categorieRepository.findAll()).thenReturn(List.of(sante, logement, perso));
+
+        assertThat(service.completerTraductions()).isEqualTo(1);
+        assertThat(sante.getNomEn()).isEqualTo("Health");
+        assertThat(sante.getDescriptionEn()).isNotBlank();
+        assertThat(logement.getNomEn()).isEqualTo("Accommodation");
+        assertThat(perso.getNomEn()).isNull();
+    }
 }

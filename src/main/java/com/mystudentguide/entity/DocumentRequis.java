@@ -64,6 +64,17 @@ public class DocumentRequis {
     private String description;
 
     /**
+     * Version anglaise (facultative) du nom et de la description,
+     * affichée aux étudiants qui utilisent l'interface en anglais.
+     * Vide : le texte français est affiché.
+     */
+    @Column(name = "nom_en", length = 150)
+    private String nomEn;
+
+    @Column(name = "description_en", columnDefinition = "TEXT")
+    private String descriptionEn;
+
+    /**
      * Catégorie du document requis.
      *
      * L'énumération est enregistrée sous forme de texte
@@ -244,5 +255,21 @@ public class DocumentRequis {
 
         // Retourne l'identifiant de la démarche.
         return demarche.getId();
+    }
+
+    public String getNomEn() {
+        return nomEn;
+    }
+
+    public void setNomEn(String nomEn) {
+        this.nomEn = nomEn;
+    }
+
+    public String getDescriptionEn() {
+        return descriptionEn;
+    }
+
+    public void setDescriptionEn(String descriptionEn) {
+        this.descriptionEn = descriptionEn;
     }
 }
