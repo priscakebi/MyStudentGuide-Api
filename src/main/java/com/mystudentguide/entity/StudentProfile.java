@@ -5,6 +5,7 @@ import com.mystudentguide.enums.LogementType;
 import com.mystudentguide.enums.VisaType;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +81,21 @@ public class StudentProfile {
      * Numéro de téléphone de l'étudiant.
      */
     private String telephone;
+
+    /**
+     * Date d'arrivée en France (facultative). Sert à calculer les dates
+     * limites personnelles, ex. : valider le VLS-TS dans les 3 mois.
+     */
+    @Column(name = "date_arrivee")
+    private LocalDate dateArrivee;
+
+    /**
+     * Fin de validité du visa ou du titre de séjour actuel (facultative).
+     * Sert à calculer les dates limites personnelles, ex. : demander le
+     * renouvellement 2 mois avant.
+     */
+    @Column(name = "date_fin_titre_sejour")
+    private LocalDate dateFinTitreSejour;
 
     /**
      * Indique si l'étudiant a terminé de compléter son profil.
@@ -298,6 +314,22 @@ public class StudentProfile {
      */
     public void setTelephone(String telephone) {
         this.telephone = telephone;
+    }
+
+    public LocalDate getDateArrivee() {
+        return dateArrivee;
+    }
+
+    public void setDateArrivee(LocalDate dateArrivee) {
+        this.dateArrivee = dateArrivee;
+    }
+
+    public LocalDate getDateFinTitreSejour() {
+        return dateFinTitreSejour;
+    }
+
+    public void setDateFinTitreSejour(LocalDate dateFinTitreSejour) {
+        this.dateFinTitreSejour = dateFinTitreSejour;
     }
 
     /**

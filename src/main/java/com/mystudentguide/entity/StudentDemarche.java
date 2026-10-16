@@ -2,8 +2,11 @@ package com.mystudentguide.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mystudentguide.enums.DemarcheStatus;
+import com.mystudentguide.service.EcheancePersonnelle;
 import jakarta.persistence.*;
+import org.hibernate.Hibernate;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -288,6 +291,23 @@ public class StudentDemarche {
 
     public void setDocumentsPrets(Set<Long> documentsPrets) {
         this.documentsPrets = documentsPrets;
+    }
+
+    /**
+     * Date limite de cette démarche pour CET étudiant (renvoyée dans le JSON),
+     * calculée par EcheancePersonnelle à partir de son profil (date d'arrivée,
+     * fin du titre de séjour) ; à défaut, la date limite générale.
+     *
+     * null si le profil ou la démarche n'ont pas été chargés avec le suivi
+     * (open-in-view est désactivé) : le front retombe alors sur la date
+     * limite générale. GET /api/student-demarches/me les charge toujours.
+     */
+    @JsonProperty("dateLimitePersonnelle")
+    public LocalDate getDateLimitePersonnelle() {
+        if (!Hibernate.isInitialized(demarche) || !Hibernate.isInitialized(studentProfile)) {
+            return null;
+        }
+        return EcheancePersonnelle.calculer(demarche, studentProfile);
     }
 
     /**

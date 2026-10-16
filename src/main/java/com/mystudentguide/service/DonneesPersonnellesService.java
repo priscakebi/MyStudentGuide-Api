@@ -123,6 +123,8 @@ public class DonneesPersonnellesService {
         m.put("premiereArrivee", p.getPremiereArrivee());
         m.put("typeLogement", p.getTypeLogement());
         m.put("adresse", p.getAdresse());
+        m.put("dateArrivee", p.getDateArrivee());
+        m.put("dateFinTitreSejour", p.getDateFinTitreSejour());
         return m;
     }
 
@@ -134,6 +136,7 @@ public class DonneesPersonnellesService {
         m.put("documentsEnvoyes", sd.isDocumentsEnvoyes());
         m.put("dateEnvoiDocuments", sd.getDateEnvoiDocuments());
         m.put("dateTerminaison", sd.getDateTerminaison());
+        m.put("dateLimite", sd.getDateLimitePersonnelle());
         m.put("documentsPrets", new ArrayList<>(sd.getDocumentsPrets()));
         m.put("commentaire", sd.getCommentaire());
         return m;

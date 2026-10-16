@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import com.mystudentguide.enums.LogementType;
+import com.mystudentguide.enums.ReferenceEcheance;
 import com.mystudentguide.enums.StatutPublication;
 import com.mystudentguide.enums.VisaType;
 import lombok.*;
@@ -91,6 +92,27 @@ public class Demarche {
      * de date limite fixe.
      */
     private LocalDate dateLimite;
+
+    // ============================================================
+    // DATE LIMITE PERSONNALISÉE (voir service.EcheancePersonnelle)
+    // ============================================================
+
+    /**
+     * Date du profil de l'étudiant servant de point de départ à sa date
+     * limite personnelle (ex. : ARRIVEE_EN_FRANCE). null = pas de règle :
+     * la date limite générale s'applique.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "echeance_reference", length = 30)
+    private ReferenceEcheance echeanceReference;
+
+    /**
+     * Nombre de jours ajoutés à la date de référence : positif = après
+     * (ex. 90 jours après l'arrivée), négatif = avant (ex. -60 : 2 mois
+     * avant la fin du titre de séjour).
+     */
+    @Column(name = "echeance_decalage_jours")
+    private Integer echeanceDecalageJours;
 
     // ============================================================
     // PUBLICATION ET SOURCE OFFICIELLE (import Service-Public)

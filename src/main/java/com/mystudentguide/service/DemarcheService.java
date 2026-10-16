@@ -332,6 +332,8 @@ public class DemarcheService {
                 .liensOfficiels(liensOfficiels)
                 .sourceUrl(demarche.getSourceUrl())
                 .sourceDateMaj(demarche.getSourceDateMaj())
+                .echeanceReference(demarche.getEcheanceReference())
+                .echeanceDecalageJours(demarche.getEcheanceDecalageJours())
                 .build();
     }
 

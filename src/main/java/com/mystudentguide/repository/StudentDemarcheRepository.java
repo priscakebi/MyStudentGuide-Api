@@ -48,6 +48,7 @@ public interface StudentDemarcheRepository
         SELECT sd
         FROM StudentDemarche sd
         JOIN FETCH sd.demarche
+        JOIN FETCH sd.studentProfile
         WHERE sd.studentProfile.id = :studentProfileId
     """)
     List<StudentDemarche> findByStudentProfileId(
@@ -74,6 +75,7 @@ public interface StudentDemarcheRepository
         SELECT sd
         FROM StudentDemarche sd
         JOIN FETCH sd.demarche
+        JOIN FETCH sd.studentProfile
         WHERE sd.studentProfile.id = :studentProfileId
         AND sd.statut = :statut
     """)
@@ -223,6 +225,7 @@ public interface StudentDemarcheRepository
         SELECT sd
         FROM StudentDemarche sd
         JOIN FETCH sd.demarche
+        JOIN FETCH sd.studentProfile
         WHERE sd.studentProfile.id = :studentProfileId
         AND sd.demarche.id = :demarcheId
     """)

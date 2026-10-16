@@ -1,5 +1,6 @@
 package com.mystudentguide.dto.demarche;
 
+import com.mystudentguide.enums.ReferenceEcheance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -99,4 +100,11 @@ public class DemarcheDetailDTO {
      */
     private String sourceUrl;
     private LocalDate sourceDateMaj;
+
+    /**
+     * Règle de date limite personnalisée (voir Demarche.echeanceReference) :
+     * permet d'afficher par exemple « 90 jours après votre arrivée en France ».
+     */
+    private ReferenceEcheance echeanceReference;
+    private Integer echeanceDecalageJours;
 }

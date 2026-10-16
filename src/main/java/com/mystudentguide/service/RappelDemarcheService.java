@@ -249,10 +249,12 @@ public class RappelDemarcheService {
                 continue;
             }
 
-            LocalDate dateLimite =
-                    studentDemarche
-                            .getDemarche()
-                            .getDateLimite();
+            // Date limite de CET étudiant : calculée depuis son profil si la démarche
+            // a une règle (ex. 90 jours après l'arrivée), sinon la date générale.
+            LocalDate dateLimite = EcheancePersonnelle.calculer(
+                    studentDemarche.getDemarche(),
+                    studentDemarche.getStudentProfile()
+            );
 
 
             // ----------------------------------------------------
