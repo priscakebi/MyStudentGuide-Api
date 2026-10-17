@@ -52,8 +52,34 @@ public record AdminStatsResponse(
         long signalementsOuverts,
 
         /** Demandes d'aide des étudiants en attente de réponse. */
-        long demandesAideOuvertes
+        long demandesAideOuvertes,
+
+        /** Qui sont les étudiants : profils, e-mails, titres de séjour, répartitions. */
+        ProfilEtudiants profils
 ) {
+
+    /**
+     * @param complets profils complets (champs obligatoires du formulaire remplis)
+     * @param sansProfil étudiants qui n'ont pas encore créé de profil
+     * @param emailsNonConfirmes adresses e-mail pas encore confirmées
+     * @param titresExpirant60j titres de séjour qui expirent dans les 60 prochains jours
+     * @param nationalites 5 nationalités les plus représentées
+     * @param villes 5 villes d'études les plus représentées
+     * @param visas répartition par type de visa (code de l'énumération VisaType)
+     */
+    public record ProfilEtudiants(
+            long complets,
+            long sansProfil,
+            long emailsNonConfirmes,
+            long titresExpirant60j,
+            List<Repartition> nationalites,
+            List<Repartition> villes,
+            List<Repartition> visas
+    ) {
+    }
+
+    public record Repartition(String libelle, long nombre) {
+    }
 
     public record TopDemarche(Long id, String titre, long commencees, long terminees) {
     }

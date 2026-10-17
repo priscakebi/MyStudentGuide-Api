@@ -36,6 +36,15 @@ public interface StudentProfileRepository
     Optional<StudentProfile> findByUserId(Long userId);
 
     /**
+     * Profils dont la date de fin du titre de séjour est comprise entre deux dates
+     * (rappels de renouvellement, RappelTitreSejourService).
+     */
+    java.util.List<StudentProfile> findByDateFinTitreSejourBetween(
+            java.time.LocalDate debut,
+            java.time.LocalDate fin
+    );
+
+    /**
      * Vérifie si un profil étudiant existe déjà
      * pour un utilisateur.
      *

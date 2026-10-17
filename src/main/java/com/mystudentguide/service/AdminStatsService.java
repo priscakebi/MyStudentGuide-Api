@@ -3,6 +3,9 @@ package com.mystudentguide.service;
 import com.mystudentguide.dto.admin.AdminStatsResponse;
 import com.mystudentguide.dto.admin.AdminStatsResponse.Activite;
 import com.mystudentguide.dto.admin.AdminStatsResponse.InscriptionsSemaine;
+import com.mystudentguide.dto.admin.AdminStatsResponse.ProfilEtudiants;
+import com.mystudentguide.dto.admin.AdminStatsResponse.Repartition;
+import com.mystudentguide.entity.StudentProfile;
 import com.mystudentguide.dto.admin.AdminStatsResponse.TopDemarche;
 import com.mystudentguide.entity.Avis;
 import com.mystudentguide.entity.Demarche;
@@ -31,6 +34,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -209,7 +213,65 @@ public class AdminStatsService {
                 parSemaine,
                 activite,
                 signalementRepository.countByStatut(StatutSignalement.OUVERT),
-                demandeAideRepository.countByStatut(StatutDemandeAide.OUVERTE)
+                demandeAideRepository.countByStatut(StatutDemandeAide.OUVERTE),
+                profils(etudiants, today)
         );
+    }
+
+    // ------------------------------------------------------------
+    // Profil des étudiants
+    // ------------------------------------------------------------
+
+    static final int TOP_REPARTITION = 5;
+
+    static ProfilEtudiants profils(List<User> etudiants, LocalDate today) {
+        List<StudentProfile> profils = etudiants.stream()
+                .map(User::getStudentProfile)
+                .filter(Objects::nonNull)
+                .toList();
+
+        long titresExpirant = profils.stream()
+                .map(StudentProfile::getDateFinTitreSejour)
+                .filter(fin -> fin != null && !fin.isBefore(today) && !fin.isAfter(today.plusDays(60)))
+                .count();
+
+        return new ProfilEtudiants(
+                profils.stream().filter(StudentProfile::estComplet).count(),
+                etudiants.size() - profils.size(),
+                etudiants.stream().filter(u -> Boolean.FALSE.equals(u.getEmailVerified())).count(),
+                titresExpirant,
+                repartition(profils.stream().map(StudentProfile::getNationalite).toList(), TOP_REPARTITION),
+                repartition(profils.stream().map(StudentProfile::getVilleEtudes).toList(), TOP_REPARTITION),
+                repartition(profils.stream()
+                        .map(p -> p.getTypeVisa() == null ? null : p.getTypeVisa().name())
+                        .toList(), Integer.MAX_VALUE)
+        );
+    }
+
+    /**
+     * Les valeurs les plus fréquentes, sans tenir compte de la casse ni des espaces
+     * (« lyon » et « Lyon » comptent ensemble ; le libellé le plus courant est gardé).
+     */
+    static List<Repartition> repartition(List<String> valeurs, int limite) {
+        Map<String, List<String>> groupes = valeurs.stream()
+                .filter(v -> v != null && !v.isBlank())
+                .map(String::trim)
+                .collect(Collectors.groupingBy(v -> v.toLowerCase(Locale.ROOT)));
+
+        return groupes.values().stream()
+                .map(variantes -> new Repartition(libellePrincipal(variantes), variantes.size()))
+                .sorted(Comparator.comparingLong(Repartition::nombre).reversed()
+                        .thenComparing(Repartition::libelle))
+                .limit(limite)
+                .toList();
+    }
+
+    private static String libellePrincipal(List<String> variantes) {
+        return variantes.stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream()
+                .max(Map.Entry.<String, Long>comparingByValue().thenComparing(Map.Entry.comparingByKey()))
+                .map(Map.Entry::getKey)
+                .orElse("");
     }
 }

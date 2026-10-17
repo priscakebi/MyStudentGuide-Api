@@ -150,4 +150,49 @@ class AdminStatsServiceTest {
         avis.setNote(note);
         return avis;
     }
+
+    // ------------------------------------------------------------
+    // Profil des étudiants
+    // ------------------------------------------------------------
+
+    @Test
+    void repartition_ignoreLaCasseEtGardeLeLibelleLePlusCourant() {
+        List<AdminStatsResponse.Repartition> villes = AdminStatsService.repartition(
+                java.util.Arrays.asList("Lyon", "lyon ", "Lyon", "Paris", null, " ", "Lille", "Paris"), 2);
+
+        assertThat(villes).containsExactly(
+                new AdminStatsResponse.Repartition("Lyon", 3),
+                new AdminStatsResponse.Repartition("Paris", 2));
+    }
+
+    @Test
+    void profils_comptesEtTitresQuiExpirent() {
+        java.time.LocalDate today = java.time.LocalDate.of(2026, 10, 17);
+
+        User sansProfil = new User();
+        sansProfil.setEmailVerified(false);
+
+        User avecProfil = new User();
+        avecProfil.setEmailVerified(true);
+        StudentProfile profil = new StudentProfile();
+        profil.setNationalite("Sénégalaise");
+        profil.setTypeVisa(com.mystudentguide.enums.VisaType.VLS_TS_ETUDIANT);
+        profil.setDateFinTitreSejour(today.plusDays(45));
+        avecProfil.setStudentProfile(profil);
+
+        User expireBientot = new User();
+        StudentProfile autre = new StudentProfile();
+        autre.setDateFinTitreSejour(today.plusDays(200));
+        expireBientot.setStudentProfile(autre);
+
+        AdminStatsResponse.ProfilEtudiants stats =
+                AdminStatsService.profils(List.of(sansProfil, avecProfil, expireBientot), today);
+
+        assertThat(stats.sansProfil()).isEqualTo(1);
+        assertThat(stats.complets()).isZero();
+        assertThat(stats.emailsNonConfirmes()).isEqualTo(1);
+        assertThat(stats.titresExpirant60j()).isEqualTo(1);
+        assertThat(stats.nationalites()).containsExactly(new AdminStatsResponse.Repartition("Sénégalaise", 1));
+        assertThat(stats.visas()).containsExactly(new AdminStatsResponse.Repartition("VLS_TS_ETUDIANT", 1));
+    }
 }

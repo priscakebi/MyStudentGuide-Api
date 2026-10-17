@@ -333,17 +333,43 @@ public class StudentProfile {
     }
 
     /**
-     * Retourne l'état de complétion du profil.
+     * Profil complet : calculé d'après les champs obligatoires du formulaire
+     * (le front n'envoyait jamais cette valeur, elle restait donc à false).
+     * Calculé à la lecture : les profils déjà enregistrés sont justes sans migration.
      */
     public Boolean getProfileCompleted() {
-        return profileCompleted;
+        return estComplet();
     }
 
     /**
-     * Modifie l'état de complétion du profil.
+     * Valeur envoyée par le client ignorée : la complétion est toujours calculée.
      */
     public void setProfileCompleted(Boolean profileCompleted) {
-        this.profileCompleted = profileCompleted;
+        // Volontairement vide (voir getProfileCompleted).
+    }
+
+    /** Mêmes champs obligatoires que le formulaire « Mon profil » du front. */
+    public boolean estComplet() {
+        return renseigne(nationalite)
+                && typeVisa != null
+                && premiereArrivee != null
+                && renseigne(universite)
+                && renseigne(niveauEtudes)
+                && renseigne(villeEtudes)
+                && renseigne(telephone)
+                && typeLogement != null
+                && renseigne(adresse);
+    }
+
+    /** Colonne en base tenue à jour (statistiques, requêtes SQL). */
+    @PrePersist
+    @PreUpdate
+    void majProfileCompleted() {
+        this.profileCompleted = estComplet();
+    }
+
+    private static boolean renseigne(String valeur) {
+        return valeur != null && !valeur.isBlank();
     }
 
     /**

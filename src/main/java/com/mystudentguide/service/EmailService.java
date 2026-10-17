@@ -548,6 +548,33 @@ public class EmailService {
     }
 
     /**
+     * Rappel de fin du titre de séjour (RappelTitreSejourService).
+     *
+     * @param email adresse de l'étudiant
+     * @param prenom prénom de l'étudiant
+     * @param sujet objet de l'e-mail
+     * @param message texte du rappel (le même que la notification)
+     * @param lienProfil page du profil, pour corriger la date si besoin
+     */
+    @Async
+    public void envoyerRappelTitreSejour(
+            String email,
+            String prenom,
+            String sujet,
+            String message,
+            String lienProfil
+    ) {
+        String contenu =
+                "Bonjour " + prenom + ",\n\n"
+                + message + "\n\n"
+                + "Vous avez un nouveau titre de séjour ? Mettez à jour sa date de fin dans votre profil :\n\n"
+                + lienProfil + "\n\n"
+                + "L'équipe MyStudentGuide";
+
+        envoyerEmail(email, sujet, contenu);
+    }
+
+    /**
      * Prévient l'étudiant que son compte, inactif depuis longtemps, va être
      * supprimé (RGPD : durée de conservation limitée, InactiviteService).
      * Il lui suffit de se connecter pour le conserver.
