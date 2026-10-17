@@ -46,6 +46,7 @@ class AuthServiceTest {
     @Mock private EmailService emailService;
     @Mock private LoginAttemptService loginAttemptService;
     @Mock private EmailVerificationService emailVerificationService;
+    @Mock private DeuxFacteursService deuxFacteursService;
 
     private AuthService authService;
 
@@ -59,7 +60,8 @@ class AuthServiceTest {
                 notificationService,
                 emailService,
                 loginAttemptService,
-                emailVerificationService);
+                emailVerificationService,
+                deuxFacteursService);
     }
 
     private RegisterRequest request(String email) {
@@ -162,5 +164,79 @@ class AuthServiceTest {
         assertThat(response.getToken()).isEqualTo("jwt-token");
         verify(loginAttemptService).succes("prisca@email.com");
         verify(loginAttemptService, never()).echec(anyString());
+    }
+
+
+    // ==============================================================
+    // CONNEXION : DOUBLE AUTHENTIFICATION
+    // ==============================================================
+
+    private static User adminAvecDeuxFacteurs() {
+        User admin = new User();
+        admin.setId(2L);
+        admin.setEmail("admin@email.com");
+        admin.setRole(RoleType.ADMIN);
+        admin.setTotpSecret("SECRET");
+        admin.setTotpActive(true);
+        return admin;
+    }
+
+    @Test
+    void login_deuxFacteurs_pasDeJwtNiDeRemiseAZeroAvantLeCode() {
+        User admin = adminAvecDeuxFacteurs();
+        when(userRepository.findByEmail("admin@email.com")).thenReturn(Optional.of(admin));
+        when(jwtService.genererDefiDeuxFacteurs(admin)).thenReturn("defi");
+
+        AuthResponse response = authService.login(connexion("admin@email.com", "MotDePasse123!"));
+
+        assertThat(response.isDeuxFacteurs()).isTrue();
+        assertThat(response.getDefi()).isEqualTo("defi");
+        assertThat(response.getToken()).isNull();
+        verify(jwtService, never()).generateToken(any(UserDetails.class));
+        verify(loginAttemptService, never()).succes(anyString());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void loginDeuxFacteurs_codeCorrect_remetLeJwt() {
+        User admin = adminAvecDeuxFacteurs();
+        when(jwtService.emailDuDefi("defi")).thenReturn("admin@email.com");
+        when(userRepository.findByEmail("admin@email.com")).thenReturn(Optional.of(admin));
+        when(deuxFacteursService.verifierCode(admin, "123456")).thenReturn(true);
+        when(jwtService.generateToken(admin)).thenReturn("jwt-token");
+
+        AuthResponse response = authService.loginDeuxFacteurs("defi", "123456");
+
+        assertThat(response.getToken()).isEqualTo("jwt-token");
+        assertThat(response.getRole()).isEqualTo("ADMIN");
+        verify(loginAttemptService).verifier("admin@email.com");
+        verify(loginAttemptService).succes("admin@email.com");
+    }
+
+    @Test
+    void loginDeuxFacteurs_codeFaux_compteUnEchec() {
+        User admin = adminAvecDeuxFacteurs();
+        when(jwtService.emailDuDefi("defi")).thenReturn("admin@email.com");
+        when(userRepository.findByEmail("admin@email.com")).thenReturn(Optional.of(admin));
+        when(deuxFacteursService.verifierCode(admin, "000000")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.loginDeuxFacteurs("defi", "000000"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Code incorrect.");
+
+        verify(loginAttemptService).echec("admin@email.com");
+        verify(jwtService, never()).generateToken(any(UserDetails.class));
+    }
+
+    @Test
+    void loginDeuxFacteurs_compteBloque_leCodeNEstPasTeste() {
+        when(jwtService.emailDuDefi("defi")).thenReturn("admin@email.com");
+        doThrow(new CompteTemporairementBloqueException(600))
+                .when(loginAttemptService).verifier("admin@email.com");
+
+        assertThatThrownBy(() -> authService.loginDeuxFacteurs("defi", "123456"))
+                .isInstanceOf(CompteTemporairementBloqueException.class);
+
+        verify(deuxFacteursService, never()).verifierCode(any(), anyString());
     }
 }

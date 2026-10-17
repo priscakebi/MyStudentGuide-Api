@@ -166,7 +166,7 @@ public class SecurityConfig {
                                                 .permitAll()
 
                                                 // Connexion
-                                                .requestMatchers("/api/auth/login")
+                                                .requestMatchers("/api/auth/login", "/api/auth/login/2fa")
                                                 .permitAll()
                                                 .requestMatchers(
                                                                 "/api/auth/forgot-password",

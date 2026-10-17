@@ -1,5 +1,6 @@
 package com.mystudentguide.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mystudentguide.enums.RoleType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -72,7 +73,9 @@ public class User implements UserDetails {
      * sous forme chiffrée (BCrypt).
      *
      * On ne stocke JAMAIS un mot de passe en clair.
+     * Jamais renvoyé dans le JSON (liste des utilisateurs de l'admin).
      */
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -150,6 +153,34 @@ public class User implements UserDetails {
     private LocalDateTime avertissementInactiviteLe;
 
     /**
+     * Double authentification (administrateurs) : secret TOTP partagé avec
+     * l'application d'authentification, encodé en Base32. Vide si jamais configurée.
+     */
+    @JsonIgnore
+    @Column(length = 64)
+    private String totpSecret;
+
+    /**
+     * true quand la double authentification est activée : un code à 6 chiffres
+     * est demandé à chaque connexion. Vide (= désactivée) pour les comptes existants.
+     */
+    private Boolean totpActive;
+
+    /**
+     * Dernier pas de 30 secondes accepté : un même code ne sert qu'une fois.
+     */
+    @JsonIgnore
+    private Long totpDernierPas;
+
+    /**
+     * Empreintes SHA-256 des codes de secours encore utilisables,
+     * séparées par des virgules (les codes eux-mêmes ne sont jamais stockés).
+     */
+    @JsonIgnore
+    @Column(length = 1000)
+    private String totpCodesSecours;
+
+    /**
      * Relation OneToOne avec StudentProfile.
      *
      * Un utilisateur possède un seul profil.
@@ -182,6 +213,13 @@ public class User implements UserDetails {
     @PreUpdate
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Vrai si un code de l'application d'authentification est demandé à la connexion.
+     */
+    public boolean deuxFacteursActive() {
+        return Boolean.TRUE.equals(totpActive) && totpSecret != null;
     }
 
     @Override

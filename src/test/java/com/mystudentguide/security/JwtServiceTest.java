@@ -66,4 +66,23 @@ class JwtServiceTest {
         assertThatThrownBy(() -> jwtService.validateConfiguration())
                 .isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    void unDefiDeuxFacteursNOuvrePasDeSession() {
+        String defi = jwtService.genererDefiDeuxFacteurs(user);
+
+        assertThat(jwtService.emailDuDefi(defi)).isEqualTo("prisca@email.com");
+        assertThat(jwtService.isTokenValid(defi, user)).isFalse();
+    }
+
+    @Test
+    void unJetonDeSessionNEstPasUnDefi() {
+        String token = jwtService.generateToken(user);
+
+        assertThatThrownBy(() -> jwtService.emailDuDefi(token))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("expiré");
+        assertThatThrownBy(() -> jwtService.emailDuDefi("n-importe-quoi"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

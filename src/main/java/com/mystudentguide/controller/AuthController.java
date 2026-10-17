@@ -5,6 +5,7 @@ import com.mystudentguide.dto.auth.AuthResponse;
 import com.mystudentguide.dto.auth.ForgotPasswordRequest;
 import com.mystudentguide.dto.auth.MessageResponse;
 import com.mystudentguide.dto.auth.ResetPasswordRequest;
+import com.mystudentguide.dto.auth.LoginDeuxFacteursRequest;
 import com.mystudentguide.dto.auth.LoginRequest;
 import com.mystudentguide.dto.auth.RegisterRequest;
 import com.mystudentguide.service.AuthService;
@@ -114,6 +115,20 @@ public class AuthController {
         AuthResponse response = authService.login(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Seconde étape de la connexion quand la double authentification est activée.
+     *
+     * POST /api/auth/login/2fa   { "defi": "...", "code": "123456" }
+     *
+     * 400 si le code est faux ou le défi expiré, 429 après trop d'erreurs.
+     */
+    @PostMapping("/login/2fa")
+    public ResponseEntity<AuthResponse> loginDeuxFacteurs(
+            @Valid @RequestBody LoginDeuxFacteursRequest request
+    ) {
+        return ResponseEntity.ok(authService.loginDeuxFacteurs(request.defi(), request.code()));
     }
 
     /**

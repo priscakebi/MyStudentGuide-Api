@@ -3,6 +3,7 @@ package com.mystudentguide.config;
 import com.mystudentguide.entity.User;
 import com.mystudentguide.enums.RoleType;
 import com.mystudentguide.repository.UserRepository;
+import com.mystudentguide.service.DeuxFacteursService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
  *   (son mot de passe n'est PAS modifié).
  *
  * Le code peut donc s'exécuter à chaque démarrage sans créer de doublon.
+ *
+ * Secours : ADMIN_2FA_RESET=true désactive la double authentification de ce
+ * compte au démarrage (téléphone ET codes de secours perdus). À remettre à
+ * false juste après, puis réactiver la double authentification.
  */
 @Component
 public class AdminInitializer implements CommandLineRunner {
@@ -39,6 +44,7 @@ public class AdminInitializer implements CommandLineRunner {
     private final String adminPassword;
     private final String adminPrenom;
     private final String adminNom;
+    private final boolean reinitialiserDeuxFacteurs;
 
     public AdminInitializer(
             UserRepository userRepository,
@@ -46,8 +52,10 @@ public class AdminInitializer implements CommandLineRunner {
             @Value("${app.admin.email:}") String adminEmail,
             @Value("${app.admin.password:}") String adminPassword,
             @Value("${app.admin.prenom:Admin}") String adminPrenom,
-            @Value("${app.admin.nom:MyStudentGuide}") String adminNom
+            @Value("${app.admin.nom:MyStudentGuide}") String adminNom,
+            @Value("${app.admin.reset-2fa:false}") boolean reinitialiserDeuxFacteurs
     ) {
+        this.reinitialiserDeuxFacteurs = reinitialiserDeuxFacteurs;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.adminEmail = adminEmail;
@@ -78,6 +86,13 @@ public class AdminInitializer implements CommandLineRunner {
                         log.info("Le compte {} a reçu le rôle ADMIN.", email);
                     } else {
                         log.info("Administrateur {} déjà présent.", email);
+                    }
+
+                    if (reinitialiserDeuxFacteurs && existant.deuxFacteursActive()) {
+                        DeuxFacteursService.reinitialiser(existant);
+                        userRepository.save(existant);
+                        log.warn("Double authentification désactivée pour {} (ADMIN_2FA_RESET). "
+                                + "Remettez ADMIN_2FA_RESET à false.", email);
                     }
                 },
                 () -> {

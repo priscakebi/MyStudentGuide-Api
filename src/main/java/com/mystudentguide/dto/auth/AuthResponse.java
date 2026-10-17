@@ -66,6 +66,38 @@ public class AuthResponse {
     }
 
     /**
+     * true : le mot de passe est correct mais un code de l'application
+     * d'authentification est encore demandé (aucun JWT n'est remis).
+     */
+    private boolean deuxFacteurs;
+
+    /**
+     * Défi à renvoyer avec le code à POST /api/auth/login/2fa (valable 5 minutes).
+     */
+    private String defi;
+
+    /**
+     * Réponse intermédiaire de la connexion quand la double authentification est activée.
+     *
+     * @param defi jeton de défi signé
+     * @param email adresse email
+     */
+    public static AuthResponse deuxFacteursRequis(String defi, String email) {
+        AuthResponse response = new AuthResponse(null, null, email, null);
+        response.deuxFacteurs = true;
+        response.defi = defi;
+        return response;
+    }
+
+    public boolean isDeuxFacteurs() {
+        return deuxFacteurs;
+    }
+
+    public String getDefi() {
+        return defi;
+    }
+
+    /**
      * Retourne le token JWT.
      *
      * @return token JWT

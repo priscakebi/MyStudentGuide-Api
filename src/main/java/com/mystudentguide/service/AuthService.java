@@ -81,6 +81,11 @@ public class AuthService {
     private final EmailVerificationService emailVerificationService;
 
     /**
+     * Code de l'application d'authentification (administrateurs).
+     */
+    private final DeuxFacteursService deuxFacteursService;
+
+    /**
      * Constructeur du service.
      *
      * Toutes les dépendances nécessaires au fonctionnement
@@ -94,6 +99,7 @@ public class AuthService {
      * @param emailService service d'envoi des emails
      * @param loginAttemptService limitation des tentatives de connexion
      * @param emailVerificationService confirmation de l'adresse e-mail
+     * @param deuxFacteursService double authentification
      */
     public AuthService(
         UserRepository userRepository,
@@ -103,8 +109,10 @@ public class AuthService {
         NotificationService notificationService,
         EmailService emailService,
         LoginAttemptService loginAttemptService,
-        EmailVerificationService emailVerificationService
+        EmailVerificationService emailVerificationService,
+        DeuxFacteursService deuxFacteursService
     ) {
+        this.deuxFacteursService = deuxFacteursService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
@@ -273,8 +281,6 @@ public class AuthService {
             throw e;
         }
 
-        loginAttemptService.succes(request.getEmail());
-
         // Recherche l'utilisateur correspondant à l'adresse email.
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(
@@ -282,6 +288,57 @@ public class AuthService {
                     "Utilisateur introuvable"
                 )
             );
+
+        // Double authentification : pas encore de JWT, un code est demandé.
+        // Le compteur d'échecs n'est PAS remis à zéro : sinon, avec le mot de passe,
+        // on pourrait essayer des codes sans limite.
+        if (user.deuxFacteursActive()) {
+            return AuthResponse.deuxFacteursRequis(
+                jwtService.genererDefiDeuxFacteurs(user),
+                user.getEmail()
+            );
+        }
+
+        return connecter(user);
+    }
+
+    /**
+     * Seconde étape de la connexion : code de l'application d'authentification
+     * (ou code de secours). Les codes faux comptent comme des échecs de connexion :
+     * après 5 erreurs, le compte est bloqué quelques minutes.
+     *
+     * @param defi jeton reçu à la première étape
+     * @param code code saisi
+     * @return réponse contenant le JWT
+     */
+    public AuthResponse loginDeuxFacteurs(String defi, String code) {
+
+        String email = jwtService.emailDuDefi(defi);
+
+        loginAttemptService.verifier(email);
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(
+                () -> new IllegalArgumentException(
+                    "Utilisateur introuvable"
+                )
+            );
+
+        if (!deuxFacteursService.verifierCode(user, code)) {
+            loginAttemptService.echec(email);
+            throw new IllegalArgumentException("Code incorrect.");
+        }
+
+        return connecter(user);
+    }
+
+    /**
+     * Connexion réussie : compteur d'échecs remis à zéro,
+     * dernière connexion mise à jour, JWT remis.
+     */
+    private AuthResponse connecter(User user) {
+
+        loginAttemptService.succes(user.getEmail());
 
         // Compte actif : on repart de zéro pour la suppression des comptes inactifs
         // (et un éventuel avertissement de suppression est annulé).

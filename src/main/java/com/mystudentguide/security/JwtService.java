@@ -171,8 +171,51 @@ public class JwtService {
 
         final String username = extractUsername(token);
 
+        // Un défi de double authentification n'ouvre jamais de session.
         return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+                && !isTokenExpired(token)
+                && extractClaim(token, claims -> claims.get(CLAIM_TYPE)) == null;
+    }
+
+    // ============================================================
+    // DÉFI DE DOUBLE AUTHENTIFICATION
+    // ============================================================
+
+    private static final String CLAIM_TYPE = "type";
+    private static final String TYPE_DEFI = "2fa";
+    private static final long DUREE_DEFI_MS = 5 * 60 * 1000;
+
+    /**
+     * Jeton remis après un mot de passe correct quand la double authentification
+     * est activée : il ne vaut que pour POST /api/auth/login/2fa, pendant 5 minutes.
+     */
+    public String genererDefiDeuxFacteurs(UserDetails userDetails) {
+        long maintenant = System.currentTimeMillis();
+        return Jwts.builder()
+                .claim(CLAIM_TYPE, TYPE_DEFI)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(maintenant))
+                .expiration(new Date(maintenant + DUREE_DEFI_MS))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
+     * Adresse e-mail d'un défi valide.
+     *
+     * @throws IllegalArgumentException si le défi est expiré, falsifié ou n'en est pas un
+     */
+    public String emailDuDefi(String defi) {
+        try {
+            Claims claims = extractAllClaims(defi);
+            if (!TYPE_DEFI.equals(claims.get(CLAIM_TYPE))) {
+                throw new IllegalArgumentException();
+            }
+            return claims.getSubject();
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException(
+                    "Votre demande de connexion a expiré. Saisissez de nouveau votre mot de passe.");
+        }
     }
 
     /**
