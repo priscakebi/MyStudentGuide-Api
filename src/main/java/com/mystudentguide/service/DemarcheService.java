@@ -337,6 +337,7 @@ public class DemarcheService {
                 .documentsRequis(documentsRequis)
                 .etapes(etapes)
                 .liensOfficiels(liensOfficiels)
+                .conseils(ConseilService.dtos(demarche))
                 .sourceUrl(demarche.getSourceUrl())
                 .sourceDateMaj(demarche.getSourceDateMaj())
                 .echeanceReference(demarche.getEcheanceReference())

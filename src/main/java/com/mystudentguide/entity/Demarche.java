@@ -326,6 +326,19 @@ public class Demarche {
     private List<LienOfficiel> liensOfficiels = new ArrayList<>();
 
     /**
+     * Conseils pratiques rédigés par l'admin (ConseilDemarche).
+     */
+    @OneToMany(
+        mappedBy = "demarche",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    @OrderBy("id ASC")
+    @Builder.Default
+    @JsonIgnore
+    private List<ConseilDemarche> conseils = new ArrayList<>();
+
+    /**
      * Signalements d'erreurs envoyés par les étudiants
      * (supprimés avec la démarche).
      */

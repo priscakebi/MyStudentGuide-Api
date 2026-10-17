@@ -98,6 +98,9 @@ public class DemarcheDetailDTO {
      */
     private List<LienOfficielDTO> liensOfficiels;
 
+    /** Conseils pratiques rédigés par l'admin. */
+    private List<ConseilDtos.ConseilDTO> conseils;
+
     /**
      * Fiche Service-Public d'origine (null si la démarche a été saisie
      * à la main). La mention de la source et de sa date de mise à jour
