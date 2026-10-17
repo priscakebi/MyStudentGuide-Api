@@ -8,6 +8,7 @@ import com.mystudentguide.enums.RoleType;
 import com.mystudentguide.repository.StudentProfileRepository;
 import com.mystudentguide.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -117,6 +118,7 @@ public class StudentProfileService {
      * @param email email de l'utilisateur connecté
      * @return le profil enregistré
      */
+    @Transactional
     public StudentProfile saveProfile(
             StudentProfile studentProfile,
             String email) {
@@ -131,6 +133,15 @@ public class StudentProfileService {
 
         // On vérifie si le profil existe déjà avant de sauvegarder.
         boolean profileAlreadyExists = studentProfile.getId() != null;
+
+        // Démarches suivies : jamais envoyées par le formulaire (@JsonIgnore), elles
+        // arrivent VIDES. Sans cette ligne, l'enregistrement remplaçait la liste par
+        // une liste vide et orphanRemoval supprimait toutes les démarches commencées.
+        if (profileAlreadyExists) {
+            studentProfileRepository.findById(studentProfile.getId())
+                    .ifPresent(existant ->
+                            studentProfile.setStudentDemarches(existant.getStudentDemarches()));
+        }
 
         // Association obligatoire entre le profil et son utilisateur.
         studentProfile.setUser(user);
