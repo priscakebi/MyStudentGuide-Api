@@ -76,6 +76,11 @@ public class AuthService {
     private final LoginAttemptService loginAttemptService;
 
     /**
+     * Lien de confirmation de l'adresse e-mail envoyé à l'inscription.
+     */
+    private final EmailVerificationService emailVerificationService;
+
+    /**
      * Constructeur du service.
      *
      * Toutes les dépendances nécessaires au fonctionnement
@@ -88,6 +93,7 @@ public class AuthService {
      * @param notificationService service des notifications internes
      * @param emailService service d'envoi des emails
      * @param loginAttemptService limitation des tentatives de connexion
+     * @param emailVerificationService confirmation de l'adresse e-mail
      */
     public AuthService(
         UserRepository userRepository,
@@ -96,7 +102,8 @@ public class AuthService {
         JwtService jwtService,
         NotificationService notificationService,
         EmailService emailService,
-        LoginAttemptService loginAttemptService
+        LoginAttemptService loginAttemptService,
+        EmailVerificationService emailVerificationService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -105,6 +112,7 @@ public class AuthService {
         this.notificationService = notificationService;
         this.emailService = emailService;
         this.loginAttemptService = loginAttemptService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     /**
@@ -118,7 +126,8 @@ public class AuthService {
      * 4. On lui attribue le rôle ETUDIANT.
      * 5. On sauvegarde l'utilisateur.
      * 6. On crée une notification interne pour les administrateurs.
-     * 7. On envoie un email de confirmation à l'étudiant.
+     * 7. On envoie à l'étudiant un e-mail de bienvenue avec le lien de
+     *    confirmation de son adresse (compte utilisable sans attendre).
      * 8. On envoie un email à chaque administrateur.
      * 9. On génère le JWT.
      *
@@ -166,6 +175,9 @@ public class AuthService {
 
         // Point de départ du délai d'inactivité (InactiviteService).
         user.setDerniereConnexion(LocalDateTime.now());
+
+        // Adresse à confirmer par le lien reçu par e-mail.
+        user.setEmailVerified(false);
 
         // Sauvegarde du nouvel utilisateur en base de données.
         User savedUser = userRepository.save(user);
@@ -216,10 +228,7 @@ public class AuthService {
 
         // Envoie un email confirmant à l'étudiant
         // que son compte vient d'être créé.
-        emailService.envoyerConfirmationInscription(
-            savedUser.getEmail(),
-            savedUser.getPrenom()
-        );
+        emailVerificationService.envoyerLien(savedUser, true);
 
         // ==========================================================
         // GÉNÉRATION DU JWT

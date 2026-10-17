@@ -45,6 +45,7 @@ class AuthServiceTest {
     @Mock private NotificationService notificationService;
     @Mock private EmailService emailService;
     @Mock private LoginAttemptService loginAttemptService;
+    @Mock private EmailVerificationService emailVerificationService;
 
     private AuthService authService;
 
@@ -57,7 +58,8 @@ class AuthServiceTest {
                 jwtService,
                 notificationService,
                 emailService,
-                loginAttemptService);
+                loginAttemptService,
+                emailVerificationService);
     }
 
     private RegisterRequest request(String email) {
@@ -105,7 +107,9 @@ class AuthServiceTest {
         assertThat(response.getToken()).isEqualTo("jwt-token");
         assertThat(response.getRole()).isEqualTo("ETUDIANT");
 
-        verify(emailService).envoyerConfirmationInscription(anyString(), anyString());
+        // Adresse à confirmer : lien envoyé avec le mot de bienvenue.
+        assertThat(saved.getValue().getEmailVerified()).isFalse();
+        verify(emailVerificationService).envoyerLien(saved.getValue(), true);
     }
 
 

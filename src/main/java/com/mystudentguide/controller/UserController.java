@@ -3,8 +3,13 @@ package com.mystudentguide.controller;
 import com.mystudentguide.dto.user.UserResponse;
 import com.mystudentguide.dto.user.UserUpdateRequest;
 import com.mystudentguide.entity.User;
+import com.mystudentguide.security.CustomUserDetailsService;
+import com.mystudentguide.security.JwtService;
 import com.mystudentguide.service.UserService;
 
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -34,14 +39,28 @@ public class UserController {
      */
     private final UserService userService;
 
+    /**
+     * Nouveau jeton quand l'adresse e-mail (identifiant du JWT) change.
+     */
+    private final JwtService jwtService;
+    private final CustomUserDetailsService userDetailsService;
+
 
     /**
-     * Constructeur permettant d'injecter le UserService.
+     * Constructeur permettant d'injecter les dépendances.
      *
      * @param userService service de gestion des utilisateurs
+     * @param jwtService génération des jetons de connexion
+     * @param userDetailsService chargement de l'utilisateur pour le jeton
      */
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService,
+            JwtService jwtService,
+            CustomUserDetailsService userDetailsService
+    ) {
         this.userService = userService;
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
 
@@ -107,7 +126,7 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> updateCurrentUser(
             Authentication authentication,
-            @RequestBody UserUpdateRequest updatedUser
+            @Valid @RequestBody UserUpdateRequest updatedUser
     ) {
 
         // Récupération de l'email actuel de l'utilisateur connecté.
@@ -120,6 +139,17 @@ public class UserController {
                         email,
                         updatedUser
                 );
+
+        // L'adresse e-mail est l'identifiant du jeton : après un changement,
+        // l'ancien jeton ne serait plus reconnu. Le nouveau est renvoyé dans
+        // l'en-tête Authorization (repris automatiquement par le frontend).
+        if (!updatedAccount.getEmail().equalsIgnoreCase(email)) {
+            String jeton = jwtService.generateToken(
+                    userDetailsService.loadUserByUsername(updatedAccount.getEmail()));
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + jeton)
+                    .body(updatedAccount);
+        }
 
         // Retour des informations mises à jour au frontend.
         return ResponseEntity.ok(updatedAccount);

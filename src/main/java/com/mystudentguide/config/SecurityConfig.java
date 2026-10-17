@@ -170,7 +170,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(
                                                                 "/api/auth/forgot-password",
-                                                                "/api/auth/reset-password")
+                                                                "/api/auth/reset-password",
+                                                                "/api/auth/verify-email")
                                                 .permitAll()
 
                                                 // Avis publics affichés sur la page d'accueil

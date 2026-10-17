@@ -18,6 +18,8 @@ import java.util.List;
  * @param ficheAnnuaire  fiche sur lannuaire.service-public.gouv.fr
  * @param latitude       pour l'itinéraire (peut être null)
  * @param longitude      pour l'itinéraire (peut être null)
+ * @param base           lieu utilisé : ADRESSE (domicile) ou VILLE_ETUDES ;
+ *                       null pour une recherche par ville (?ville=X)
  */
 public record PrefectureInfo(
         String nom,
@@ -31,6 +33,13 @@ public record PrefectureInfo(
         String contact,
         String ficheAnnuaire,
         String latitude,
-        String longitude
+        String longitude,
+        LieuPrefecture.Base base
 ) {
+
+    /** Même préfecture, en indiquant le lieu du profil qui a servi à la trouver. */
+    public PrefectureInfo avecBase(LieuPrefecture.Base base) {
+        return new PrefectureInfo(nom, ville, departement, adresse, telephone, horaires, rendezVous,
+                siteInternet, contact, ficheAnnuaire, latitude, longitude, base);
+    }
 }

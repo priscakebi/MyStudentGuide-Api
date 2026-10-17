@@ -195,7 +195,8 @@ public class AnnuaireClient {
                 texteOuNull(r.path("formulaire_contact")),
                 texteOuNull(r.path("url_service_public")),
                 adresse == null ? null : texteOuNull(adresse.path("latitude")),
-                adresse == null ? null : texteOuNull(adresse.path("longitude"))
+                adresse == null ? null : texteOuNull(adresse.path("longitude")),
+                null
         );
     }
 

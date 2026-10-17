@@ -6,6 +6,7 @@ import com.mystudentguide.entity.User;
 import com.mystudentguide.repository.UserRepository;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,14 +35,34 @@ public class UserService {
      */
     private final UserRepository userRepository;
 
+    /**
+     * Lien de confirmation envoyé quand l'adresse e-mail change.
+     */
+    private final EmailVerificationService emailVerificationService;
+
 
     /**
-     * Injection du UserRepository par constructeur.
+     * Injection des dépendances par constructeur.
      *
      * @param userRepository repository des utilisateurs
+     * @param emailVerificationService confirmation de l'adresse e-mail
      */
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
+        this.emailVerificationService = emailVerificationService;
+    }
+
+    /** Informations du compte transmises au frontend (dont l'état de confirmation de l'e-mail). */
+    private static UserResponse versReponse(User user) {
+        UserResponse reponse = new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getPrenom(),
+                user.getNom(),
+                user.getRole().name()
+        );
+        reponse.setEmailVerified(!Boolean.FALSE.equals(user.getEmailVerified()));
+        return reponse;
     }
 
 
@@ -140,17 +161,7 @@ public class UserService {
                 );
 
         // Conversion de l'entité User en UserResponse.
-        //
-        // L'ordre des paramètres correspond exactement
-        // au constructeur de UserResponse :
-        // id, email, prenom, nom, role.
-        return new UserResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getPrenom(),
-                user.getNom(),
-                user.getRole().name()
-        );
+        return versReponse(user);
     }
 
 
@@ -169,6 +180,7 @@ public class UserService {
      * @param updatedUser nouvelles informations du compte
      * @return informations mises à jour
      */
+    @Transactional
     public UserResponse updateCurrentUser(
             String email,
             UserUpdateRequest updatedUser
@@ -183,25 +195,32 @@ public class UserService {
                 );
 
         // Mise à jour du prénom.
-        user.setPrenom(updatedUser.getPrenom());
+        user.setPrenom(updatedUser.getPrenom().trim());
 
         // Mise à jour du nom.
-        user.setNom(updatedUser.getNom());
+        user.setNom(updatedUser.getNom().trim());
 
-        // Mise à jour de l'adresse email.
-        user.setEmail(updatedUser.getEmail());
+        // Nouvelle adresse e-mail : libre, puis à confirmer par un lien.
+        String nouvelEmail = updatedUser.getEmail().trim().toLowerCase();
+        boolean emailChange = !nouvelEmail.equalsIgnoreCase(user.getEmail());
+
+        if (emailChange) {
+            if (userRepository.existsByEmail(nouvelEmail)) {
+                throw new IllegalArgumentException("Cette adresse email est déjà utilisée");
+            }
+            user.setEmail(nouvelEmail);
+            user.setEmailVerified(false);
+        }
 
         // Sauvegarde des modifications dans la base de données.
         User savedUser = userRepository.save(user);
 
+        if (emailChange) {
+            emailVerificationService.envoyerLien(savedUser, false);
+        }
+
         // Conversion de l'utilisateur sauvegardé
         // en UserResponse pour le frontend.
-        return new UserResponse(
-                savedUser.getId(),
-                savedUser.getEmail(),
-                savedUser.getPrenom(),
-                savedUser.getNom(),
-                savedUser.getRole().name()
-        );
+        return versReponse(savedUser);
     }
 }

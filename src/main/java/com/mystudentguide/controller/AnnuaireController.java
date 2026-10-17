@@ -2,6 +2,7 @@ package com.mystudentguide.controller;
 
 import com.mystudentguide.repository.StudentProfileRepository;
 import com.mystudentguide.servicepublic.AnnuaireClient;
+import com.mystudentguide.servicepublic.LieuPrefecture;
 import com.mystudentguide.servicepublic.PrefectureInfo;
 
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Préfecture compétente, d'après l'API Annuaire de l'administration.
  *
- * GET /api/annuaire/prefecture/me        préfecture de la ville d'études du profil (ETUDIANT)
+ * GET /api/annuaire/prefecture/me        préfecture du domicile (adresse du profil), sinon de la ville d'études (ETUDIANT)
  * GET /api/annuaire/prefecture?ville=X   préfecture d'une ville (utilisateur connecté)
  *
  * 204 No Content : ville non renseignée ou inconnue.
@@ -35,12 +36,22 @@ public class AnnuaireController {
         this.studentProfileRepository = studentProfileRepository;
     }
 
+    /**
+     * Préfecture du DOMICILE (code postal de l'adresse du profil) : c'est
+     * elle qui est compétente pour le titre de séjour. À défaut d'adresse
+     * exploitable, celle de la ville d'études. Le champ « base » indique
+     * lequel a servi.
+     */
     @GetMapping("/prefecture/me")
     @PreAuthorize("hasRole('ETUDIANT')")
     public ResponseEntity<PrefectureInfo> maPrefecture(Authentication authentication) {
         return studentProfileRepository.findByUserEmail(authentication.getName())
-                .map(profil -> profil.getVilleEtudes())
-                .flatMap(annuaireClient::prefecturePourVille)
+                .flatMap(profil -> LieuPrefecture.candidats(profil.getAdresse(), profil.getVilleEtudes())
+                        .stream()
+                        .flatMap(lieu -> annuaireClient.prefecturePourVille(lieu.recherche())
+                                .map(prefecture -> prefecture.avecBase(lieu.base()))
+                                .stream())
+                        .findFirst())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }

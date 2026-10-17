@@ -91,6 +91,11 @@ public class RappelDemarcheService {
     private void envoyerEmailEcheance(StudentDemarche studentDemarche, String titreDemarche,
                                       long joursRestants, LocalDate dateLimite) {
         var user = studentDemarche.getStudentProfile().getUser();
+        // Adresse non confirmée : la notification dans l'application suffit
+        // (une adresse mal saisie recevrait les rappels de quelqu'un d'autre).
+        if (Boolean.FALSE.equals(user.getEmailVerified())) {
+            return;
+        }
         String lien = frontendUrl + "/demarches/" + studentDemarche.getDemarche().getId();
         emailService.envoyerRappelEcheance(
                 user.getEmail(), user.getPrenom(), titreDemarche, joursRestants, dateLimite, lien);

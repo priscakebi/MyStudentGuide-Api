@@ -42,6 +42,9 @@ public class UserResponse {
      */
     private String role;
 
+    /** Faux tant que l'étudiant n'a pas cliqué sur le lien de confirmation. */
+    private boolean emailVerified = true;
+
     /**
      * Constructeur vide.
      */
@@ -110,5 +113,13 @@ public class UserResponse {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }

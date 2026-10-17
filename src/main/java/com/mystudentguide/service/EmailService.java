@@ -320,25 +320,36 @@ public class EmailService {
     // ==========================================================
 
     /**
-     * Envoie à l'étudiant une confirmation après la création
-     * de son compte.
+     * Lien de confirmation de l'adresse e-mail : à l'inscription (avec un
+     * mot de bienvenue) ou après un changement d'adresse.
      *
-     * @param email email de l'étudiant
-     * @param prenom prénom de l'étudiant
+     * @param email     adresse à confirmer
+     * @param prenom    prénom de l'étudiant
+     * @param lien      lien de confirmation (à usage unique)
+     * @param heures    durée de validité du lien
+     * @param bienvenue vrai à l'inscription
      */
     @Async
-    public void envoyerConfirmationInscription(
+    public void envoyerLienConfirmationEmail(
             String email,
-            String prenom
+            String prenom,
+            String lien,
+            long heures,
+            boolean bienvenue
     ) {
-        String sujet = "Bienvenue sur MyStudentGuide";
+        String sujet = bienvenue
+                ? "Bienvenue sur MyStudentGuide : confirmez votre adresse e-mail"
+                : "Confirmez votre adresse e-mail MyStudentGuide";
 
         String contenu =
                 "Bonjour " + prenom + ",\n\n"
-                + "Votre compte MyStudentGuide a bien été créé.\n\n"
-                + "Vous pouvez maintenant vous connecter à votre "
-                + "espace étudiant et compléter votre profil.\n\n"
-                + "Bienvenue sur MyStudentGuide !\n\n"
+                + (bienvenue
+                        ? "Votre compte MyStudentGuide a bien été créé. Bienvenue !\n\n"
+                        : "")
+                + "Pour recevoir vos rappels de dates limites et pouvoir récupérer votre compte, "
+                + "confirmez votre adresse e-mail en cliquant sur ce lien (valable " + heures + " heures) :\n\n"
+                + lien + "\n\n"
+                + "Si vous n'avez pas créé de compte MyStudentGuide, ignorez simplement cet e-mail.\n\n"
                 + "L'équipe MyStudentGuide";
 
         envoyerEmail(email, sujet, contenu);
