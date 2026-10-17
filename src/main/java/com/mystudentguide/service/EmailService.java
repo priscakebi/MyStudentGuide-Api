@@ -548,6 +548,33 @@ public class EmailService {
     }
 
     /**
+     * Annonce de l'équipe à tous les étudiants (AnnonceService), si l'admin a coché « Envoyer aussi par e-mail ».
+     *
+     * @param email adresse de l'étudiant
+     * @param prenom prénom de l'étudiant
+     * @param titre titre de l'annonce (objet de l'e-mail)
+     * @param message texte de l'annonce
+     * @param lienSite adresse du site
+     */
+    @Async
+    public void envoyerAnnonce(
+            String email,
+            String prenom,
+            String titre,
+            String message,
+            String lienSite
+    ) {
+        String contenu =
+                "Bonjour " + prenom + ",\n\n"
+                + message + "\n\n"
+                + "Retrouvez toutes vos démarches sur MyStudentGuide :\n\n"
+                + lienSite + "\n\n"
+                + "L'équipe MyStudentGuide";
+
+        envoyerEmail(email, titre, contenu);
+    }
+
+    /**
      * Rappel de fin du titre de séjour (RappelTitreSejourService).
      *
      * @param email adresse de l'étudiant

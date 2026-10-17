@@ -3,6 +3,7 @@ package com.mystudentguide.service;
 import com.mystudentguide.entity.Notification;
 import com.mystudentguide.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -95,6 +96,17 @@ public class NotificationService {
     public long countUnreadNotifications(Long userId) {
         return notificationRepository
                 .countByUserIdAndLu(userId, false);
+    }
+
+    /**
+     * Marque toutes les notifications de l'utilisateur comme lues.
+     *
+     * @param userId identifiant de l'utilisateur
+     * @return nombre de notifications marquées
+     */
+    @Transactional
+    public int markAllAsRead(Long userId) {
+        return notificationRepository.marquerToutesLues(userId);
     }
 
 

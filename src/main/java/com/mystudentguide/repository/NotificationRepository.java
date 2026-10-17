@@ -3,6 +3,7 @@ package com.mystudentguide.repository;
 import com.mystudentguide.entity.Notification;
 import com.mystudentguide.enums.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -102,6 +103,16 @@ public interface NotificationRepository
      * @param userId identifiant de l'utilisateur
      */
     void deleteByUserId(Long userId);
+
+    /**
+     * Marque toutes les notifications non lues d'un utilisateur comme lues
+     * (« Tout marquer comme lu »), en une seule requête.
+     *
+     * @return nombre de notifications modifiées
+     */
+    @Modifying
+    @Query("UPDATE Notification n SET n.lu = true WHERE n.user.id = :userId AND n.lu = false")
+    int marquerToutesLues(@Param("userId") Long userId);
 
     /**
      * Notifications « à action » encore sans réponse

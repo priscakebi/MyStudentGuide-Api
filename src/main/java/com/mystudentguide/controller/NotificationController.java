@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -142,6 +143,18 @@ public class NotificationController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(savedNotification);
+    }
+
+    /**
+     * PATCH /api/notifications/read-all
+     *
+     * « Tout marquer comme lu » : toutes les notifications de l'utilisateur connecté.
+     * Réponse : { "marquees": 3 }
+     */
+    @PatchMapping("/read-all")
+    public ResponseEntity<Map<String, Integer>> markAllAsRead(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        return ResponseEntity.ok(Map.of("marquees", notificationService.markAllAsRead(user.getId())));
     }
 
     /** Marque SA notification comme lue. */
